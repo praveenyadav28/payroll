@@ -21,33 +21,6 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
 
   List<Map<String, dynamic>> gestDealerList = [];
 
-  List<Map<String, dynamic>> ledgergroupList = [
-    {
-      "id": 7,
-      "ledger_Group_Name": "Bank Accounts",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 9,
-      "ledger_Group_Name": "Sundry Creditors",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 10,
-      "ledger_Group_Name": "Sundry Debtors",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 14,
-      "ledger_Group_Name": "InDirect",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    }
-  ];
-
   @override
   void initState() {
     fetchCity().then((value) => setState(() {}));
@@ -132,12 +105,10 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                     TableRow(children: [
                       tableHeader("Name"),
                       tableHeader("City"),
-                      tableHeader("Account Group"),
                       tableHeader("Opening Balance"),
                       tableHeader("Credit Type"),
                       tableHeader("GST Type"),
                       tableHeader("GST Number"),
-                      tableHeader("Mobile"),
                       tableHeader("Actions"),
                     ]),
                     ...List.generate(ledgerList.length, (index) {
@@ -146,10 +117,6 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                       String cityName = cityList.firstWhere((element) =>
                           element['city_Id'] == cityId)['city_Name'];
 
-                      int groupId = ledger['ledger_Group_Id'];
-                      String groupName = ledgergroupList.firstWhere((element) =>
-                          element['id'] == groupId)['ledger_Group_Name'];
-
                       int gstDealerId = ledger['gstTypeId'];
                       String gstDealerName = gestDealerList.firstWhere(
                           (element) => element['id'] == gstDealerId)['name'];
@@ -157,12 +124,10 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                       return TableRow(children: [
                         tableCell(ledger['ledger_Name']),
                         tableCell(cityName),
-                        tableCell(groupName),
                         tableCell(ledger['opening_Bal']),
                         tableCell(ledger['opening_Bal_Combo']),
                         tableCell(gstDealerName),
                         tableCell("${ledger['gst_No']}"),
-                        tableCell("${ledger['mob']}"),
                         SizedBox(
                             height: Sizes.height * 0.07,
                             child: Center(

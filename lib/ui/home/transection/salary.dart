@@ -1,14 +1,19 @@
 // screens/salary_screen.dart
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:payroll/components/api.dart';
 import 'package:payroll/components/side_menu.dart';
+import 'package:payroll/ui/home/transection/controller.dart';
+import 'package:payroll/ui/home/transection/payment.dart';
+import 'package:payroll/ui/home/transection/salaryModel.dart';
+import 'package:payroll/utils/api.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
 import 'package:payroll/utils/container.dart';
-import 'package:payroll/utils/layout.dart';
 import 'package:payroll/utils/mediaquery.dart';
 import 'package:payroll/utils/textformfield.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class SalaryScreen extends StatefulWidget {
   const SalaryScreen({super.key});
@@ -18,50 +23,115 @@ class SalaryScreen extends StatefulWidget {
 }
 
 class _SalaryScreenState extends State<SalaryScreen> {
-  TextEditingController _voucherController = TextEditingController();
-  TextEditingController searchController = TextEditingController();
-  List staffList = [];
-  List<Map<String, dynamic>> deginationList = [];
+  TextEditingController yearController = TextEditingController();
 
-  List<Map<String, dynamic>> branchList = [];
-  int? branchId;
-  String branchName = '';
-  Map<String, dynamic>? branchValue;
-
-  List<Map<String, dynamic>> monthList = [
-    {'id': 1, 'name': 'January'},
-    {'id': 2, 'name': 'February'},
-    {'id': 3, 'name': 'March'},
-    {'id': 4, 'name': 'Aprail'},
-    {'id': 5, 'name': 'May'},
-    {'id': 6, 'name': 'June'},
-    {'id': 7, 'name': 'July'},
-    {'id': 8, 'name': 'August'},
-    {'id': 9, 'name': 'September'},
-    {'id': 10, 'name': 'October'},
-    {'id': 11, 'name': 'November'},
-    {'id': 12, 'name': 'December'},
-  ];
-  int? monthId;
-  String monthName = '';
-  Map<String, dynamic>? monthValue;
-
-  //Date
-  TextEditingController voucherDatePicker = TextEditingController(
-    text: DateFormat('yyyy/MM/dd').format(DateTime.now()),
-  );
-  TextEditingController fromDatePicker = TextEditingController(
-    text: DateFormat('yyyy/MM/dd').format(DateTime.now()),
-  );
-  TextEditingController toDatePicker = TextEditingController(
-    text: DateFormat('yyyy/MM/dd').format(DateTime.now()),
-  );
+  late ApiSalary apiService;
+  Map<String, dynamic>? workingHoursData;
+  List<DateTime> selectedDates = [];
+  DateTime focusedDay = DateTime.now();
+  final DateFormat formatter = DateFormat('yyyy-MM-dd');
+  List<String> selectedPublicHolidays = [];
+  String selectedMonth = 'January';
 
   @override
   void initState() {
-    deginationData().then((value) => setState(() {}));
-    branchData().then((value) => setState(() {}));
     super.initState();
+    apiService = ApiSalary();
+    yearController.text = "${DateTime.now().year}";
+    fetchData();
+  }
+
+  final Map<String, int> monthDays = {
+    'January': 31,
+    'February': 28,
+    'March': 31,
+    'April': 30,
+    'May': 31,
+    'June': 30,
+    'July': 31,
+    'August': 31,
+    'September': 30,
+    'October': 31,
+    'November': 30,
+    'December': 31,
+  };
+
+  bool isLeapYear(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+  }
+
+  void fetchData() async {
+    try {
+      List<Employee> employees = await apiService.fetchEmployees();
+      int year = int.parse(yearController.text.toString());
+      int daysInMonth = (selectedMonth == 'February' && isLeapYear(year))
+          ? 29
+          : monthDays[selectedMonth]!;
+
+      String fromDate =
+          '$year-${monthDays.keys.toList().indexOf(selectedMonth) + 1}-01';
+      String toDate =
+          '$year-${monthDays.keys.toList().indexOf(selectedMonth) + 1}-$daysInMonth';
+
+      List<DeviceLog> logs = await apiService.fetchLogs(fromDate, toDate);
+      WorkingHoursCalculator calculator = WorkingHoursCalculator();
+      Map<String, dynamic> data = calculator.calculate(
+        employees,
+        logs,
+        selectedPublicHolidays,
+        daysInMonth,
+        int.parse(yearController.text.toString()),
+        selectedMonth == 'January'
+            ? 1
+            : selectedMonth == 'February'
+                ? 2
+                : selectedMonth == 'March'
+                    ? 3
+                    : selectedMonth == 'April'
+                        ? 4
+                        : selectedMonth == 'May'
+                            ? 5
+                            : selectedMonth == 'June'
+                                ? 6
+                                : selectedMonth == 'July'
+                                    ? 7
+                                    : selectedMonth == 'August'
+                                        ? 8
+                                        : selectedMonth == 'September'
+                                            ? 9
+                                            : selectedMonth == 'October'
+                                                ? 10
+                                                : selectedMonth == 'November'
+                                                    ? 11
+                                                    : 12,
+      );
+
+      setState(() {
+        workingHoursData = data;
+      });
+    } catch (e) {
+      _showErrorDialog('Failed to load data: $e');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -73,434 +143,434 @@ class _SalaryScreenState extends State<SalaryScreen> {
         flexibleSpace: const OutsideContainer(child: Column()),
         centerTitle: true,
       ),
+      backgroundColor: AppColor.white,
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
-            horizontal: Sizes.width * .05, vertical: Sizes.height * .02),
+            horizontal: Sizes.width * 0.02, vertical: Sizes.height * 0.02),
         child: Column(
           children: [
-            addMasterOutside(children: [
-              Column(children: [
-                dropdownTextfield(
-                  context,
-                  "Voucher Date",
-                  InkWell(
-                    onTap: () async {
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      ).then((selectedDate) {
-                        if (selectedDate != null) {
-                          voucherDatePicker.text =
-                              DateFormat('yyyy/MM/dd').format(selectedDate);
-                        }
-                      });
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          voucherDatePicker.text,
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColor.black),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Icon(Icons.edit_calendar, color: AppColor.black)
-                      ],
-                    ),
-                  ),
-                ),
-              ]),
-              CommonTextFormField(
-                controller: _voucherController,
-                labelText: 'Voucher No.',
-                hintText: 'Voucher No.',
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter a name' : null,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  dropdownTextfield(
-                      context,
-                      "Branch",
-                      searchDropDown(
-                          context,
-                          "Select Branch",
-                          branchList
-                              .map((item) => DropdownMenuItem(
-                                    onTap: () {
-                                      setState(() {
-                                        branchId = item['bid'];
-                                        branchName = item['bLocation_Name'];
-                                      });
-                                    },
-                                    value: item,
-                                    child: Text(
-                                      item['bLocation_Name'].toString(),
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColor.black),
-                                    ),
-                                  ))
-                              .toList(),
-                          branchValue,
-                          (value) {
-                            setState(() {
-                              branchValue = value;
-                            });
+                        child: TableCalendar(
+                          firstDay: DateTime.utc(1920, 1, 1),
+                          lastDay: DateTime.utc(2330, 12, 31),
+                          weekendDays: const [DateTime.sunday],
+                          focusedDay: focusedDay,
+                          selectedDayPredicate: (day) {
+                            return selectedDates.contains(day);
                           },
-                          searchController,
-                          (value) {
+                          onDaySelected: (selectedDay, newFocusedDay) {
                             setState(() {
-                              branchList
-                                  .where((item) => item['name']
-                                      .toString()
-                                      .toLowerCase()
-                                      .contains(value.toLowerCase()))
-                                  .toList();
-                            });
-                          },
-                          'Search for a branch...',
-                          (isOpen) {
-                            if (!isOpen) {
-                              searchController.clear();
-                            }
-                          })),
-                ],
-              ),
-              Column(children: [
-                dropdownTextfield(
-                  context,
-                  "From Date",
-                  InkWell(
-                    onTap: () async {
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      ).then((selectedDate) {
-                        if (selectedDate != null) {
-                          fromDatePicker.text =
-                              DateFormat('yyyy/MM/dd').format(selectedDate);
-                        }
-                      });
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          fromDatePicker.text,
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColor.black),
-                        ),
-                        Icon(Icons.edit_calendar, color: AppColor.black)
-                      ],
-                    ),
-                  ),
-                ),
-              ]),
-              Column(children: [
-                dropdownTextfield(
-                  context,
-                  "To Date",
-                  InkWell(
-                    onTap: () async {
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      ).then((selectedDate) {
-                        if (selectedDate != null) {
-                          toDatePicker.text =
-                              DateFormat('yyyy/MM/dd').format(selectedDate);
-                        }
-                      });
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          toDatePicker.text,
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColor.black),
-                        ),
-                        Icon(Icons.edit_calendar, color: AppColor.black)
-                      ],
-                    ),
-                  ),
-                ),
-              ]),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  dropdownTextfield(
-                      context,
-                      "Month",
-                      searchDropDown(
-                          context,
-                          "Select Month",
-                          monthList
-                              .map((item) => DropdownMenuItem(
-                                    onTap: () {
-                                      setState(() {
-                                        monthId = item['id'];
-                                        monthName = item['name'];
-                                      });
-                                    },
-                                    value: item,
-                                    child: Text(
-                                      item['name'].toString(),
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColor.black),
-                                    ),
-                                  ))
-                              .toList(),
-                          monthValue,
-                          (value) {
-                            setState(() {
-                              monthValue = value;
-                            });
-                          },
-                          searchController,
-                          (value) {
-                            setState(() {
-                              monthList
-                                  .where((item) => item['name']
-                                      .toString()
-                                      .toLowerCase()
-                                      .contains(value.toLowerCase()))
-                                  .toList();
-                            });
-                          },
-                          'Search for a month...',
-                          (isOpen) {
-                            if (!isOpen) {
-                              searchController.clear();
-                            }
-                          })),
-                ],
-              ),
-              Column(
-                children: [
-                  DefaultButton(
-                    borderRadius: BorderRadius.circular(30),
-                    onTap: () {
-                      branchId != null
-                          ? getStaffList(branchId!)
-                              .then((value) => setState(() {}))
-                          : null;
-                    },
-                    hight: 50,
-                    width: double.infinity,
-                    boxShadow: const [BoxShadow()],
-                    child: Text(
-                      'Search',
-                      style: TextStyle(
-                        fontSize: 17,
-                        color: AppColor.black,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ], context: context),
-            SizedBox(height: Sizes.height * 0.02),
-            Container(
-              alignment: Alignment.topCenter,
-              width: Sizes.width * 1,
-              height: 50,
-              decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10)),
-                  border: Border.all(
-                    color: const Color(0xff377785),
-                  ),
-                  gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xff4EB1C6), Color(0xff56C891)])),
-              child: Center(
-                  child: Text(
-                "Salary List",
-                style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.black,
-                    fontWeight: FontWeight.bold),
-              )),
-            ),
-            SizedBox(
-              width: Sizes.width * 1,
-              child: Table(
-                border: TableBorder.all(
-                    borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(10),
-                        bottomRight: Radius.circular(10)),
-                    color: const Color(0xff377785)),
-                children: [
-                  TableRow(children: [
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text(
-                          "Name",
-                          style: TextStyle(
-                              color: AppColor.black,
-                              fontWeight: FontWeight.bold),
-                        ))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Designation",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Mobile",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Monthly Salary",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("This month Salary",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Due Salary",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Date",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                    SizedBox(
-                        height: Sizes.height * 0.05,
-                        child: Center(
-                            child: Text("Action",
-                                style: TextStyle(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.bold)))),
-                  ]),
-                  ...List.generate(staffList.length, (index) {
-                    final staff = staffList[index];
-                    int deginationId = staff['staff_Degination_Id'];
-                    String deginationName = deginationList.firstWhere(
-                        (element) => element['id'] == deginationId)['name'];
+                              focusedDay = newFocusedDay;
 
-                    return TableRow(children: [
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text(staffList[index]['staff_Name'],
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text(deginationName,
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text(staff['mob'].toString(),
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text("17000",
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text("14500",
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text("14500",
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                              child: Text("12 Jan 2024",
-                                  style: TextStyle(color: AppColor.black)))),
-                      SizedBox(
-                          height: Sizes.height * 0.07,
-                          child: Center(
-                            child: IconButton(
-                              icon: Icon(Icons.visibility,
-                                  color: AppColor.primery),
-                              onPressed: () {
-                                // Handle edit action
-                              },
+                              if (selectedDates.contains(selectedDay)) {
+                                selectedDates.remove(selectedDay);
+                                selectedPublicHolidays
+                                    .remove(formatter.format(selectedDay));
+                              } else {
+                                selectedDates.add(selectedDay);
+                                selectedPublicHolidays
+                                    .add(formatter.format(selectedDay));
+                              }
+                            });
+                          },
+                          headerStyle: const HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            decoration: BoxDecoration(
+                              border: Border(bottom: BorderSide()),
                             ),
-                          )),
-                    ]);
-                  })
-                ],
-              ),
-            )
+                            titleTextStyle: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          calendarStyle: const CalendarStyle(
+                            selectedDecoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0xff4EB1C6),
+                                    Color(0xff56C891)
+                                  ]),
+                              shape: BoxShape.circle,
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            todayTextStyle: TextStyle(color: Colors.black),
+                            weekendTextStyle:
+                                TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: Sizes.height * 0.02),
+                      ElevatedButton(
+                          child: const Text("Clear public holidays"),
+                          onPressed: () {
+                            setState(() {
+                              selectedDates.clear();
+                              selectedPublicHolidays.clear();
+                            });
+                          }),
+                    ],
+                  ),
+                ),
+                SizedBox(width: Sizes.width * 0.02),
+                Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                            height: Sizes.height * .25,
+                            child: Image.asset('assets/images/payment.jpg')),
+                        Row(
+                          children: [
+                            Expanded(
+                                child: CommonTextFormField(
+                              controller: yearController,
+                              labelText: "Year",
+                            )),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: dropdownTextfield(
+                                  context,
+                                  "Select Month",
+                                  DropdownButton<String>(
+                                    underline: Container(),
+                                    isExpanded: true,
+                                    icon: const Icon(
+                                        Icons.keyboard_arrow_down_outlined),
+                                    value: selectedMonth,
+                                    items: monthDays.keys.map((String month) {
+                                      return DropdownMenuItem<String>(
+                                        value: month,
+                                        child: Text(month),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedMonth = value!;
+                                      });
+                                    },
+                                  )),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: Sizes.height * 0.02),
+                        CustomButton(
+                            width: double.infinity,
+                            height: 50,
+                            text: "Submit",
+                            press: () {
+                              setState(() {
+                                fetchData();
+                              });
+                            })
+                      ],
+                    )),
+              ],
+            ),
+            SizedBox(height: Sizes.height * 0.02),
+            workingHoursData == null
+                ? Container()
+                : Container(
+                    alignment: Alignment.topCenter,
+                    width: Sizes.width * 1,
+                    height: 50,
+                    decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10)),
+                        border: Border.all(
+                          color: const Color(0xff377785),
+                        ),
+                        gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xff4EB1C6), Color(0xff56C891)])),
+                    child: Center(
+                        child: Text(
+                      "Salary List",
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: AppColor.black,
+                          fontWeight: FontWeight.bold),
+                    )),
+                  ),
+            workingHoursData == null
+                ? Container()
+                : SizedBox(
+                    width: Sizes.width * 1,
+                    child: Table(
+                      border: TableBorder.all(
+                          borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(10),
+                              bottomRight: Radius.circular(10)),
+                          color: const Color(0xff377785)),
+                      children: [
+                        TableRow(children: [
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text(
+                                "Name",
+                                style: TextStyle(
+                                    color: AppColor.black,
+                                    fontWeight: FontWeight.bold),
+                              ))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text("Working Days",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text('Absent Days',
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text("Half Days",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text("Monthly Salary",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text("Payable Amount",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                          SizedBox(
+                              height: Sizes.height * 0.05,
+                              child: Center(
+                                  child: Text("Action",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold)))),
+                        ]),
+                        ...List.generate(workingHoursData!.length, (index) {
+                          String employeeCode =
+                              workingHoursData!.keys.elementAt(index);
+                          var employeeData = workingHoursData![employeeCode];
+
+                          return TableRow(children: [
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text(employeeData['name'],
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text(
+                                        "${employeeData['workingDays']}",
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text("${employeeData['absentDays']}",
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text("${employeeData['halfDays']}",
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text(
+                                        "₹${employeeData['monthlySalary'].toStringAsFixed(2)}",
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Center(
+                                    child: Text(
+                                        "₹${employeeData['dueSalary'].toStringAsFixed(2)}",
+                                        style:
+                                            TextStyle(color: AppColor.black)))),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.visibility,
+                                          color: AppColor.primery),
+                                      onPressed: () {
+                                        showActivityLog(
+                                            employeeData['dailyPunchLogInfo']);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.payment,
+                                          color: AppColor.primery),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PaymentScreen(
+                                                paymentVoucherNo: 1,
+                                                employeeData: employeeData),
+                                          ),
+                                        );
+                                        // Handle edit action
+                                      },
+                                    ),
+                                  ],
+                                )),
+                          ]);
+                        })
+                      ],
+                    ),
+                  )
           ],
         ),
       ),
     );
   }
 
-  Future<void> deginationData() async {
-    await fetchDataByMiscMaster(
-      28,
-      deginationList,
+  void showActivityLog(Map<String, List<DeviceLog>> dailyPunchLogInfo) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Activity Log'),
+          content: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Wrap(
+              direction: Axis.horizontal,
+              alignment: WrapAlignment.spaceBetween,
+              children: [
+                ...List.generate(
+                  dailyPunchLogInfo.keys.length,
+                  (index) {
+                    String date = dailyPunchLogInfo.keys.elementAt(index);
+                    List<DeviceLog> logs = dailyPunchLogInfo[date] ?? [];
+
+                    // Calculate working hour difference
+                    String workingHoursDiff = "No data";
+                    if (logs.isNotEmpty) {
+                      if (logs.length == 1) {
+                        // Only one punch, assume 8 hours as in the calculation logic
+                        workingHoursDiff = "Unknown";
+                      } else {
+                        // Calculate the difference between first and last punch
+                        DateTime firstPunch = logs.first.punchTime;
+                        DateTime lastPunch = logs.last.punchTime;
+                        Duration duration = lastPunch.difference(firstPunch);
+                        double hoursWorked =
+                            duration.inHours + (duration.inMinutes % 60) / 60.0;
+                        workingHoursDiff =
+                            "${hoursWorked.toStringAsFixed(1)} hours";
+                      }
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColor.primery),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xff4EB1C6).withOpacity(.4),
+                              Color(0xff56C891).withOpacity(.4)
+                            ],
+                          )),
+                      width: Sizes.width < 700
+                          ? double.infinity
+                          : Sizes.width < 1100 && Sizes.width > 700
+                              ? Sizes.width * 0.38
+                              : Sizes.width * 0.26,
+                      child: ListTile(
+                        title: Text(
+                          '$date',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...logs.map((log) {
+                              return Text(
+                                  'Punch Time: ${log.punchTime}'.substring(
+                                      22,
+                                      'Punch Time: ${log.punchTime}'.length -
+                                          7),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w500));
+                            }).toList(),
+                            const SizedBox(height: 5),
+                          ],
+                        ),
+                        trailing: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text('Working Hours',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                            Text(
+                              '$workingHoursDiff',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: workingHoursDiff == 'Unknown'
+                                      ? AppColor.red
+                                      : AppColor.black),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
-  }
-
-  Future getStaffList(int branchID) async {
-    staffList = await ApiService.fetchData(
-        "MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=$branchID");
-  }
-
-// Get Branch List
-  Future branchData() async {
-    final response =
-        await ApiService.fetchData("MasterPayroll/GetBranchPayroll");
-
-    if (response is List) {
-      // Assuming it's a list, convert each item to a Map
-      branchList =
-          response.map((item) => item as Map<String, dynamic>).toList();
-    } else {
-      throw Exception('Unexpected data format for citys');
-    }
   }
 }

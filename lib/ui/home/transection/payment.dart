@@ -11,54 +11,30 @@ import 'package:payroll/utils/snackbar.dart';
 import 'package:payroll/utils/textformfield.dart';
 
 class PaymentScreen extends StatefulWidget {
-  PaymentScreen({super.key, required this.paymentVoucherNo});
+  PaymentScreen(
+      {super.key, required this.paymentVoucherNo, required this.employeeData});
   int paymentVoucherNo = 0;
+  Map<String, dynamic>? employeeData;
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  List<Map<String, dynamic>> staffList = [];
-
-  // Function to add a new staff
-  void addStaff() {
-    setState(() {
-      staffList.add({
-        'staffName': 'John Doe', // Placeholder for staff name
-        'monthlySalary': 10000, // Placeholder for monthly salary
-        'dueSalary': 2000, // Placeholder for due salary
-        'thisMonthSalary': 8000, // Placeholder for this month's salary
-      });
-    });
-  }
-
-  // Function to remove a staff
-  void removeStaff(int index) {
-    setState(() {
-      staffList.removeAt(index);
-    });
-  }
-
   //Controller
   TextEditingController pvNoController = TextEditingController();
-  TextEditingController chequeController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController sattlementSalaryController = TextEditingController();
   TextEditingController paidController = TextEditingController();
   TextEditingController remarkController = TextEditingController();
+  TextEditingController chequeController = TextEditingController();
   TextEditingController searchController = TextEditingController();
 
   //Ledger
-  List<Map<String, dynamic>> ledgerList = [];
-  String ledgerName = '';
-  Map<String, dynamic>? ledgerValue;
-  int? ledgerId;
-
   List<Map<String, dynamic>> voucherList = [];
   String voucherName = '';
   Map<String, dynamic>? voucherValue;
   int? voucherId;
 
-  Map<String, dynamic> companyDetails = {};
-  Map<String, dynamic> paymentDetails = {};
 // Date
   TextEditingController pvDate = TextEditingController(
       text: DateFormat('yyyy/MM/dd').format(DateTime.now()));
@@ -83,6 +59,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     //           }));
     //     }));
     // getAccountDetails().then((value) => setState(() {}));
+    nameController.text = widget.employeeData!['name'];
 
     super.initState();
   }
@@ -98,9 +75,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         body: OutsideContainer(
           child: SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: Sizes.width * 0.9,
-              ),
+              constraints: BoxConstraints(maxWidth: Sizes.width * 0.9),
               child: Card(
                 elevation: 4.0,
                 shape: RoundedRectangleBorder(
@@ -157,74 +132,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ],
                         ),
+                        CommonTextFormField(
+                            controller: nameController,
+                            labelText: 'Staff Name*'),
                       ]),
                       addMasterOutside(context: context, children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: dropdownTextfield(
-                                  context,
-                                  "Customer A/C*",
-                                  searchDropDown(
-                                      context,
-                                      widget.paymentVoucherNo == 0
-                                          ? "Select Customer Account*"
-                                          : ledgerName,
-                                      ledgerList
-                                          .map((item) => DropdownMenuItem(
-                                                onTap: () {
-                                                  ledgerId = item['id'];
-                                                  ledgerName = item['name'];
-                                                },
-                                                value: item,
-                                                child: Text(
-                                                  item['name'].toString(),
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: AppColor.black),
-                                                ),
-                                              ))
-                                          .toList(),
-                                      ledgerValue,
-                                      (value) {
-                                        setState(() {
-                                          ledgerValue = value;
-                                        });
-                                      },
-                                      searchController,
-                                      (value) {
-                                        setState(() {
-                                          ledgerList
-                                              .where((item) => item['name']
-                                                  .toString()
-                                                  .toLowerCase()
-                                                  .contains(
-                                                      value.toLowerCase()))
-                                              .toList();
-                                        });
-                                      },
-                                      'Search for a Customer...',
-                                      (isOpen) {
-                                        if (!isOpen) {
-                                          searchController.clear();
-                                        }
-                                      })),
-                            ),
-                            const SizedBox(width: 10),
-                            addDefaultButton(
-                              context,
-                              () async {
-                                // var result = await pushTo(LedgerMaster(groupId: 10));
-                                // if (result != null) {
-                                //   ledgerValue = null;
-                                //   fatchledger().then((value) => setState(() {}));
-                                // }
-                              },
-                            )
-                          ],
+                        ReuseContainer(
+                            title: "Monthly Salary",
+                            subtitle:
+                                "${widget.employeeData!['monthlySalary']}"),
+                        ReuseContainer(
+                            title: "Payabe Amount",
+                            subtitle:
+                                "${widget.employeeData!['dueSalary'].toStringAsFixed(2)}"),
+                        CommonTextFormField(
+                          controller: sattlementSalaryController,
+                          labelText: "Sattlement Amount*",
                         ),
                         CommonTextFormField(
                           controller: paidController,
@@ -302,69 +225,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             labelText: "Cheque Number"),
                         CommonTextFormField(
                             controller: remarkController, labelText: "Remark"),
-                        Column(
-                          children: [
-                            SizedBox(
-                              height: 55,
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: addStaff,
-                                child: Text('Add Staff'),
-                              ),
-                            ),
-                          ],
-                        ),
                       ]),
-                      SizedBox(
-                        width: double.infinity,
-                        child: DataTable(
-                          columns: const <DataColumn>[
-                            DataColumn(
-                                label: Center(child: Text('Staff Name'))),
-                            DataColumn(
-                                label: Center(child: Text('Monthly Salary'))),
-                            DataColumn(
-                                label: Center(child: Text('Due Salary'))),
-                            DataColumn(
-                                label:
-                                    Center(child: Text('This Month Salary'))),
-                            DataColumn(label: Center(child: Text('Action'))),
-                          ],
-                          rows: List<DataRow>.generate(
-                            staffList.length,
-                            (index) => DataRow(
-                              cells: <DataCell>[
-                                DataCell(Center(
-                                    child:
-                                        Text(staffList[index]['staffName']))),
-                                DataCell(Center(
-                                  child: Text(staffList[index]['monthlySalary']
-                                      .toString()),
-                                )),
-                                DataCell(Center(
-                                  child: Text(
-                                      staffList[index]['dueSalary'].toString()),
-                                )),
-                                DataCell(Center(
-                                  child: Text(staffList[index]
-                                          ['thisMonthSalary']
-                                      .toString()),
-                                )),
-                                DataCell(
-                                  Center(
-                                    child: IconButton(
-                                      icon: Icon(Icons.delete),
-                                      onPressed: () {
-                                        removeStaff(index);
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                       CustomButton(
                           text: "Save",
                           height: 52,
@@ -376,7 +237,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             } else if (paidController.text.isEmpty) {
                               showCustomSnackbar(
                                   context, "Please enter Paid Amount");
-                            } else if (ledgerId == null) {
+                            } else if (nameController.text.isEmpty) {
                               showCustomSnackbar(
                                   context, "Please select customer");
                             } else if (voucherId == null) {

@@ -5,6 +5,7 @@ class Staff {
   final String biomaxId;
   final int designationId;
   final String monthlySalary;
+  final String workingHours;
 
   Staff({
     required this.id,
@@ -13,6 +14,7 @@ class Staff {
     required this.biomaxId,
     required this.designationId,
     required this.monthlySalary,
+    required this.workingHours,
   });
 
   factory Staff.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class Staff {
       biomaxId: json['biomaxId'],
       designationId: json['staff_Degination_Id'],
       monthlySalary: json['salary'],
+      workingHours: json['other1'],
     );
   }
 }

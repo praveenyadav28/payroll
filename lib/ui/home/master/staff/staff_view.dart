@@ -114,6 +114,7 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                     tableHeader("Biomax Id"),
                     tableHeader("Mobile"),
                     tableHeader("Monthly Salary"),
+                    tableHeader("Working Hours"),
                     tableHeader("Action"),
                   ]),
                   ...List.generate(staffList.length, (index) {
@@ -130,6 +131,7 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                       tableCell(staff.biomaxId),
                       tableCell(staff.mobile),
                       tableCell(staff.monthlySalary),
+                      tableCell(staff.workingHours),
                       SizedBox(
                         height: Sizes.height * 0.07,
                         child: Center(

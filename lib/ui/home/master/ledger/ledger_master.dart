@@ -29,7 +29,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _openingBalController = TextEditingController();
   final TextEditingController _gstNumberController = TextEditingController();
-  final TextEditingController _mobileController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
 
   //State
@@ -49,35 +48,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
   int? cityId;
   String cityName = '';
   Map<String, dynamic>? cityValue;
-
-//Ledger Group
-  List<Map<String, dynamic>> ledgergroupList = [
-    {
-      "id": 7,
-      "ledger_Group_Name": "Bank Accounts",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 9,
-      "ledger_Group_Name": "Sundry Creditors",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 10,
-      "ledger_Group_Name": "Sundry Debtors",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    },
-    {
-      "id": 14,
-      "ledger_Group_Name": "InDirect",
-      "mainLedger_Id": 0,
-      "locationId": 0
-    }
-  ];
-  int? ledgergroupId = 7;
 
 //GST Dealer Type
   List<Map<String, dynamic>> gestDealerList = [];
@@ -154,40 +124,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                     validator: (value) => value!.isEmpty
                                         ? 'Please enter a name'
                                         : null,
-                                  ),
-                                  Column(
-                                    children: [
-                                      dropdownTextfield(
-                                        context,
-                                        "Account Group",
-                                        defaultDropDown(
-                                            value: ledgergroupList.firstWhere(
-                                                (item) =>
-                                                    item['id'] ==
-                                                    ledgergroupId),
-                                            items: ledgergroupList.map((data) {
-                                              return DropdownMenuItem<
-                                                  Map<String, dynamic>>(
-                                                value: data,
-                                                child: Text(
-                                                  data['ledger_Group_Name'],
-                                                  style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: AppColor.black),
-                                                ),
-                                              );
-                                            }).toList(),
-                                            onChanged: (selectedId) {
-                                              setState(() {
-                                                ledgergroupId =
-                                                    selectedId!['id'];
-                                                // Call function to make API request
-                                              });
-                                            }),
-                                      )
-                                    ],
                                   ),
                                   CommonTextFormField(
                                     controller: _addressController,
@@ -520,14 +456,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                         ? 'Please enter bank name'
                                         : null,
                                   ),
-                                  CommonTextFormField(
-                                    controller: _mobileController,
-                                    labelText: 'Mobile Number',
-                                    hintText: 'Mobile Number',
-                                    validator: (value) => value!.isEmpty
-                                        ? 'Please enter Mobile Number'
-                                        : null,
-                                  ),
                                 ], context: context),
                                 const SizedBox(height: 20),
                                 DefaultButton(
@@ -574,9 +502,9 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
           "Address2": "",
           "City_Id": cityId,
           "Std_Code": "",
-          "Mob": _mobileController.text.toString(),
+          "Mob": "",
           "Pin_Code": "",
-          "Ledger_Group_Id": ledgergroupId,
+          "Ledger_Group_Id": 7,
           "Opening_Bal": _openingBalController.text.toString(),
           "Opening_Bal_Combo": selectedbalanceTypeId == 109 ? "Cr" : "Dr",
           "Gst_No": _gstNumberController.text.toString(),
@@ -683,10 +611,8 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
     _nameController.text = response[0]['ledger_Name'];
     _addressController.text = response[0]['address'];
     _openingBalController.text = response[0]['opening_Bal'];
-    _mobileController.text = response[0]['mob'];
     _gstNumberController.text = response[0]['gst_No'];
     gestDealerId = response[0]['gstTypeId'];
-    ledgergroupId = response[0]['ledger_Group_Id'];
     selectedbalanceTypeId =
         response[0]['opening_Bal_Combo'] == 'Cr' ? 109 : 110;
     cityId = response[0]['city_Id'];

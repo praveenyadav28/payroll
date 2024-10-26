@@ -35,6 +35,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
       TextEditingController();
   final TextEditingController _bankAccountNumberController =
       TextEditingController();
+  final TextEditingController workingHourController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
   final TextEditingController _ifscNumberController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
@@ -559,6 +560,12 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                     hintText: 'Monthly Salary',
                                   ),
                                   CommonTextFormField(
+                                    textInputType: TextInputType.number,
+                                    controller: workingHourController,
+                                    labelText: 'Workinh Hours*',
+                                    hintText: 'Workinh Hours',
+                                  ),
+                                  CommonTextFormField(
                                     controller: _bankNameController,
                                     labelText: 'Bank Name',
                                     hintText: 'Bank Name',
@@ -596,6 +603,10 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                         .text.isEmpty) {
                                       showCustomSnackbar(context,
                                           'Please enter monthly salary');
+                                    } else if (workingHourController
+                                        .text.isEmpty) {
+                                      showCustomSnackbar(context,
+                                          'Please enter working hours');
                                     } else {
                                       postStaff();
                                     }
@@ -687,9 +698,9 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
             : 'MasterPayroll/UpdateStaffByIdPayroll?Id=${widget.staffId}',
         {
           "Title_Id": 1,
-          "Staff_Name": _nameController.text.toString(),
-          "Son_Off": _fatherNameController.text.toString(),
-          "Address1": _addressController.text.toString(),
+          "Staff_Name": _nameController.text.trim().toString(),
+          "Son_Off": _fatherNameController.text.trim().toString(),
+          "Address1": _addressController.text.trim().toString(),
           "Address2": "Address2",
           "City_Id": "$cityId",
           "City_Name": cityName,
@@ -697,20 +708,20 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
           "State_Name": stateName,
           "Pin_Code": "Pin_Code",
           "Std_Code": "Std_Code",
-          "Mob": _mobileNumberController.text.toString(),
+          "Mob": _mobileNumberController.text.trim().toString(),
           "Staff_Degination_Id": deginationId,
           "Staff_Department_Id": departmentId,
           "Location_Id": 3,
-          "Dob_Date": dobDatePicker.text.toString(),
-          "Joining_Date": joingDatePicker.text.toString(),
+          "Dob_Date": dobDatePicker.text.trim().toString(),
+          "Joining_Date": joingDatePicker.text.trim().toString(),
           "Left_Date": "BJuridiction",
-          "EmpId": _employeeIdController.text.toString(),
-          "BiomaxId": _biomaxIdController.text.toString(),
-          "Salary": _monthlySalaryController.text.toString(),
-          "BankName": _bankNameController.text.toString(),
-          "BankAccountNo": _bankAccountNumberController.text.toString(),
-          "BankIFSC": _ifscNumberController.text.toString(),
-          "Other1": "Other1",
+          "EmpId": _employeeIdController.text.trim().toString(),
+          "BiomaxId": _biomaxIdController.text.trim().toString(),
+          "Salary": _monthlySalaryController.text.trim().toString(),
+          "BankName": _bankNameController.text.trim().toString(),
+          "BankAccountNo": _bankAccountNumberController.text.trim().toString(),
+          "BankIFSC": _ifscNumberController.text.trim().toString(),
+          "Other1": workingHourController.text.trim().toString(),
           "Other2": "Other2",
           "Other3": "Other3",
           "Other4": "Other4",
@@ -746,5 +757,6 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
     departmentId = response[0]['staff_Department_Id'];
     dobDatePicker.text = response[0]['dob_Date'];
     joingDatePicker.text = response[0]['joining_Date'];
+    workingHourController.text = response[0]['other1'];
   }
 }

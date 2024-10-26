@@ -71,14 +71,26 @@ class ReuseContainer extends StatelessWidget {
                       child: Container(
                           padding: const EdgeInsets.only(left: 10),
                           alignment: Alignment.centerLeft,
-                          child: Text(title))),
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                                color: AppColor.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500),
+                          ))),
                   Expanded(
                       child: Container(
                           height: 50,
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: 10),
-                          color: AppColor.black.withOpacity(.1),
-                          child: Text(subtitle))),
+                          color: AppColor.primery.withOpacity(.1),
+                          child: Text(
+                            subtitle,
+                            style: TextStyle(
+                                color: AppColor.primery,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500),
+                          ))),
                 ],
               )
 

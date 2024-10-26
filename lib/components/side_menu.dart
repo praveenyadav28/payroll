@@ -87,8 +87,8 @@ class SideMenu extends StatelessWidget {
             ],
           ),
           ExpansionTile(
-            title: Text("View"),
-            leading: Icon(Icons.preview),
+            title: const Text("View"),
+            leading: const Icon(Icons.preview),
             children: [
               ListTile(
                 leading: const Icon(Icons.receipt),
@@ -100,8 +100,8 @@ class SideMenu extends StatelessWidget {
             ],
           ),
           ExpansionTile(
-            title: Text("Reports"),
-            leading: Icon(Icons.report),
+            title: const Text("Reports"),
+            leading: const Icon(Icons.report),
             children: [
               ListTile(
                 leading: const Icon(Icons.receipt),
