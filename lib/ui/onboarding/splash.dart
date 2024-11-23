@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/utils/container.dart';
 import 'package:payroll/utils/mediaquery.dart';
 
@@ -15,7 +16,9 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Timer(const Duration(seconds: 2), () {
-      Navigator.pushReplacementNamed(context, '/login');
+      Preference.getBool(PrefKeys.userstatus) == false
+          ? Navigator.pushReplacementNamed(context, '/login')
+          : Navigator.pushReplacementNamed(context, '/dashboard');
     });
   }
 

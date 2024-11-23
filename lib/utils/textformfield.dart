@@ -99,8 +99,8 @@ DropdownButtonHideUnderline searchDropDown(
       items: items,
       value: value,
       onChanged: onChanged,
-      buttonStyleData: ButtonStyleData(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+      buttonStyleData: const ButtonStyleData(
+          padding: EdgeInsets.symmetric(horizontal: 16),
           height: 50,
           width: 200),
       dropdownStyleData: const DropdownStyleData(maxHeight: 200),

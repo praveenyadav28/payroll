@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/ui/home/transection/salaryModel.dart';
 
 class ApiSalary {
   final String employeeApiUrl =
-      'http://lms.muepetro.com/api/MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=3';
+      'http://lms.muepetro.com/api/MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=${Preference.getString(PrefKeys.locationId)}';
 
   Future<List<Employee>> fetchEmployees() async {
     final response = await http.get(Uri.parse(employeeApiUrl));

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/model/staff.dart';
 import 'package:payroll/ui/home/master/staff/staff_master.dart';
+import 'package:payroll/ui/home/transection/payment.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
 import 'package:payroll/utils/container.dart';
@@ -10,8 +12,8 @@ import 'package:payroll/utils/mediaquery.dart';
 import 'package:payroll/utils/snackbar.dart';
 
 class StaffViewScreen extends StatefulWidget {
-  const StaffViewScreen({super.key});
-
+  StaffViewScreen({required this.staffListType, super.key});
+  bool staffListType = true;
   @override
   State<StaffViewScreen> createState() => _StaffViewScreenState();
 }
@@ -30,34 +32,38 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Staff Master'),
+        title: Text(
+            widget.staffListType == false ? 'Direct Payment' : 'Staff Master'),
         flexibleSpace: const OutsideContainer(child: Column()),
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20, top: 5),
-            child: Column(
-              children: [
-                CustomButton(
-                  width: 30,
-                  height: 30,
-                  text: "+",
-                  press: () async {
-                    var result = await Navigator.pushNamed(context, '/staff');
-                    if (result != null) {
-                      getStaffList()
-                          .then((value) => setState(() {})); // Refresh data
-                    }
-                  },
+          widget.staffListType == false
+              ? Container()
+              : Padding(
+                  padding: const EdgeInsets.only(right: 20, top: 5),
+                  child: Column(
+                    children: [
+                      CustomButton(
+                        width: 30,
+                        height: 30,
+                        text: "+",
+                        press: () async {
+                          var result =
+                              await Navigator.pushNamed(context, '/staff');
+                          if (result != null) {
+                            getStaffList().then(
+                                (value) => setState(() {})); // Refresh data
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        "Add Staff",
+                        style: TextStyle(fontSize: 11, color: AppColor.white),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  "Add Staff",
-                  style: TextStyle(fontSize: 11, color: AppColor.white),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
       drawer: const SideMenu(),
@@ -135,40 +141,65 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                       SizedBox(
                         height: Sizes.height * 0.07,
                         child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.edit,
-                                  color: AppColor.primery,
-                                ),
-                                onPressed: () async {
-                                  var result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => StaffMasterScreen(
-                                          isNew: false, staffId: staff.id),
+                          child: widget.staffListType == false
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.receipt,
+                                    color: AppColor.primery,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PaymentScreen(
+                                            paymentVoucherNo: 0,
+                                            employeeData: {
+                                              'name': staff.name,
+                                              'employeeCode': staff.biomaxId,
+                                              'monthlySalary':
+                                                  staff.monthlySalary,
+                                              'dueSalary': 0,
+                                            }),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.edit,
+                                        color: AppColor.primery,
+                                      ),
+                                      onPressed: () async {
+                                        var result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                StaffMasterScreen(
+                                                    isNew: false,
+                                                    staffId: staff.id),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          getStaffList().then((value) =>
+                                              setState(() {})); // Refresh data
+                                        }
+                                      },
                                     ),
-                                  );
-                                  if (result != null) {
-                                    getStaffList().then((value) =>
-                                        setState(() {})); // Refresh data
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  deleteStaffApi(staff.id).then((_) {
-                                    getStaffList()
-                                        .then((value) => setState(() {}));
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () {
+                                        deleteStaffApi(staff.id).then((_) {
+                                          getStaffList()
+                                              .then((value) => setState(() {}));
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                     ]);
@@ -215,7 +246,7 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
 
   Future<void> getStaffList() async {
     final response = await ApiService.fetchData(
-        "MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=3");
+        "MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
 
     // Assuming the response is a list of maps
     staffList = (response as List)

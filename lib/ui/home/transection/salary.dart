@@ -432,18 +432,20 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                           color: AppColor.primery),
                                       onPressed: () {
                                         showActivityLog(
-                                            employeeData['dailyPunchLogInfo']);
+                                            employeeData['dailyPunchLogInfo'],
+                                            employeeData[
+                                                'employeeWorkingHours']);
                                       },
                                     ),
                                     IconButton(
                                       icon: Icon(Icons.payment,
-                                          color: AppColor.primery),
+                                          color: AppColor.black),
                                       onPressed: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) => PaymentScreen(
-                                                paymentVoucherNo: 1,
+                                                paymentVoucherNo: 0,
                                                 employeeData: employeeData),
                                           ),
                                         );
@@ -463,7 +465,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
     );
   }
 
-  void showActivityLog(Map<String, List<DeviceLog>> dailyPunchLogInfo) {
+  void showActivityLog(
+      Map<String, List<DeviceLog>> dailyPunchLogInfo, double workingHours) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -483,6 +486,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
 
                     // Calculate working hour difference
                     String workingHoursDiff = "No data";
+                    double workingHoursStatus = 0;
                     if (logs.isNotEmpty) {
                       if (logs.length == 1) {
                         // Only one punch, assume 8 hours as in the calculation logic
@@ -494,6 +498,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                         Duration duration = lastPunch.difference(firstPunch);
                         double hoursWorked =
                             duration.inHours + (duration.inMinutes % 60) / 60.0;
+                        workingHoursStatus = hoursWorked - workingHours;
                         workingHoursDiff =
                             "${hoursWorked.toStringAsFixed(1)} hours";
                       }
@@ -501,6 +506,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
 
                     return Container(
                       margin: const EdgeInsets.all(4),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppColor.primery),
@@ -517,43 +524,78 @@ class _SalaryScreenState extends State<SalaryScreen> {
                           : Sizes.width < 1100 && Sizes.width > 700
                               ? Sizes.width * 0.38
                               : Sizes.width * 0.26,
-                      child: ListTile(
-                        title: Text(
-                          '$date',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w500),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...logs.map((log) {
-                              return Text(
-                                  'Punch Time: ${log.punchTime}'.substring(
-                                      22,
-                                      'Punch Time: ${log.punchTime}'.length -
-                                          7),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '$date',
+                                  textAlign: TextAlign.start,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w500));
-                            }).toList(),
-                            const SizedBox(height: 5),
-                          ],
-                        ),
-                        trailing: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text('Working Hours',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w500)),
-                            Text(
-                              '$workingHoursDiff',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: workingHoursDiff == 'Unknown'
-                                      ? AppColor.red
-                                      : AppColor.black),
-                            ),
-                          ],
-                        ),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text('Working Hours',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: AppColor.black.withOpacity(.7),
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...logs.map((log) {
+                                      return Text(
+                                          'Punch Time: ${log.punchTime}'
+                                              .substring(
+                                                  22,
+                                                  'Punch Time: ${log.punchTime}'
+                                                          .length -
+                                                      7),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600));
+                                    }).toList(),
+                                    const SizedBox(height: 5),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '$workingHoursDiff',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: workingHoursDiff == 'Unknown'
+                                              ? AppColor.red
+                                              : AppColor.black),
+                                    ),
+                                    Text(
+                                      workingHoursStatus.toStringAsFixed(2),
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: workingHoursStatus < 0
+                                              ? AppColor.red
+                                              : AppColor.black),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        ],
                       ),
                     );
                   },

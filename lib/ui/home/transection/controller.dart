@@ -96,6 +96,7 @@ class WorkingHoursCalculator {
       result[employee.employeeCode] = {
         'name': employee.name,
         'employeeCode': employee.employeeCode,
+        'employeeWorkingHours': employee.workingHours,
         'workingHours': totalHours,
         'workingDays': workingDays,
         'absentDays': actualAbsentDays,

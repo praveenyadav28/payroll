@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/utils/container.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
@@ -35,6 +40,8 @@ class DashboardScreen extends StatelessWidget {
                       Colors.green),
                   _buildInfoCard(
                       'Due Payments', '₹1,20,000', Icons.payment, Colors.red),
+                  _buildInfoCard('Advance Payments', '₹10,000', Icons.payments,
+                      const Color.fromARGB(255, 76, 163, 175)),
                   _buildInfoCard(
                       'Departments', '5', Icons.business, Colors.orange),
 
@@ -58,6 +65,14 @@ class DashboardScreen extends StatelessWidget {
                                       return const Text('Feb');
                                     case 2:
                                       return const Text('Mar');
+                                    case 3:
+                                      return const Text('Apr');
+                                    case 4:
+                                      return const Text('May');
+                                    case 5:
+                                      return const Text('Jun');
+                                    case 6:
+                                      return const Text('Jul');
                                     default:
                                       return const Text('');
                                   }
@@ -76,6 +91,18 @@ class DashboardScreen extends StatelessWidget {
                             ]),
                             BarChartGroupData(x: 2, barRods: [
                               BarChartRodData(toY: 14, color: Colors.red)
+                            ]),
+                            BarChartGroupData(x: 3, barRods: [
+                              BarChartRodData(toY: 14, color: Colors.purple)
+                            ]),
+                            BarChartGroupData(x: 4, barRods: [
+                              BarChartRodData(toY: 14, color: Colors.yellow)
+                            ]),
+                            BarChartGroupData(x: 5, barRods: [
+                              BarChartRodData(toY: 14, color: Colors.orange)
+                            ]),
+                            BarChartGroupData(x: 6, barRods: [
+                              BarChartRodData(toY: 14, color: Colors.green)
                             ]),
                           ],
                         ),
@@ -137,51 +164,6 @@ class DashboardScreen extends StatelessWidget {
                           ],
                           centerSpaceRadius: 40,
                           sectionsSpace: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Another Bar Chart
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceEvenly,
-                          borderData: FlBorderData(show: false),
-                          titlesData: FlTitlesData(
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  switch (value.toInt()) {
-                                    case 0:
-                                      return const Text('Apr');
-                                    case 1:
-                                      return const Text('May');
-                                    case 2:
-                                      return const Text('Jun');
-                                    default:
-                                      return const Text('');
-                                  }
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
-                          ),
-                          barGroups: [
-                            BarChartGroupData(x: 0, barRods: [
-                              BarChartRodData(toY: 12, color: Colors.blueGrey)
-                            ]),
-                            BarChartGroupData(x: 1, barRods: [
-                              BarChartRodData(toY: 15, color: Colors.teal)
-                            ]),
-                            BarChartGroupData(x: 2, barRods: [
-                              BarChartRodData(toY: 18, color: Colors.indigo)
-                            ]),
-                          ],
                         ),
                       ),
                     ),

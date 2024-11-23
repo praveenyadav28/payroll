@@ -5,6 +5,9 @@ class Branch {
   final String? bStateName;
   final String? bDeviceSerialNo; // Biomax serial number
   final String? bDeviceName;
+  final String? bEmailId;
+  final String? other1; //Password
+  final String? other2; //User Type
 
   Branch({
     required this.bid,
@@ -13,6 +16,9 @@ class Branch {
     this.bStateName,
     this.bDeviceSerialNo,
     this.bDeviceName,
+    this.bEmailId,
+    this.other1,
+    this.other2,
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) {
@@ -23,6 +29,9 @@ class Branch {
       bStateName: json['bState_Name'] as String?,
       bDeviceSerialNo: json['bDeviceSerialNo'] as String?,
       bDeviceName: json['bDeviceName'] as String?,
+      bEmailId: json['bEmailId'] as String?,
+      other1: json['other1'] as String?,
+      other2: json['other2'] as String?,
     );
   }
 }

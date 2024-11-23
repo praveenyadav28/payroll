@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/ui/home/master/city_master.dart';
 import 'package:payroll/ui/home/master/district_master.dart';
@@ -27,7 +28,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _openingBalController = TextEditingController();
   final TextEditingController _gstNumberController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
 
@@ -52,13 +52,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
 //GST Dealer Type
   List<Map<String, dynamic>> gestDealerList = [];
   int? gestDealerId = 27;
-
-//Balance Type
-  List<Map<String, dynamic>> balanceTypeList = [
-    {'id': 109, 'name': 'Credit'},
-    {'id': 110, 'name': 'Debit'},
-  ];
-  int selectedbalanceTypeId = 109;
 
   @override
   void initState() {
@@ -373,48 +366,6 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                               })),
                                     ],
                                   ),
-                                  CommonTextFormField(
-                                    controller: _openingBalController,
-                                    labelText: 'Opening Balance',
-                                    hintText: 'Opening Balance',
-                                    validator: (value) => value!.isEmpty
-                                        ? 'Please enter a Opening Balance'
-                                        : null,
-                                  ),
-                                  Column(
-                                    children: [
-                                      dropdownTextfield(
-                                        context,
-                                        "",
-                                        defaultDropDown(
-                                            value: balanceTypeList.firstWhere(
-                                                (item) =>
-                                                    item['id'] ==
-                                                    selectedbalanceTypeId),
-                                            items: balanceTypeList.map((data) {
-                                              return DropdownMenuItem<
-                                                  Map<String, dynamic>>(
-                                                value: data,
-                                                child: Text(
-                                                  data['name'],
-                                                  style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: AppColor.black),
-                                                ),
-                                              );
-                                            }).toList(),
-                                            onChanged: (selectedId) {
-                                              setState(() {
-                                                selectedbalanceTypeId =
-                                                    selectedId!['id'];
-                                                // Call function to make API request
-                                              });
-                                            }),
-                                      )
-                                    ],
-                                  ),
                                   Column(
                                     children: [
                                       dropdownTextfield(
@@ -456,25 +407,28 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                         ? 'Please enter bank name'
                                         : null,
                                   ),
-                                ], context: context),
-                                const SizedBox(height: 20),
-                                DefaultButton(
-                                  borderRadius: BorderRadius.circular(30),
-                                  onTap: () {
-                                    postLedger();
-                                  },
-                                  hight: 50,
-                                  width: double.infinity,
-                                  boxShadow: const [BoxShadow()],
-                                  child: Text(
-                                    widget.isNew ? 'Save' : 'Update',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      color: AppColor.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  Column(
+                                    children: [
+                                      DefaultButton(
+                                        borderRadius: BorderRadius.circular(30),
+                                        onTap: () {
+                                          postLedger();
+                                        },
+                                        hight: 50,
+                                        width: double.infinity,
+                                        boxShadow: const [BoxShadow()],
+                                        child: Text(
+                                          widget.isNew ? 'Save' : 'Update',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            color: AppColor.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
+                                ], context: context),
                               ],
                             ),
                           ),
@@ -492,7 +446,7 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
   Future postLedger() async {
     var response = await ApiService.postData(
         widget.isNew
-            ? 'MasterPayroll/PostLedgerMasterPayroll?LocationId=3'
+            ? 'MasterPayroll/PostLedgerMasterPayroll?LocationId=${Preference.getString(PrefKeys.locationId)}'
             : 'MasterPayroll/UpdatePostLedgerMasterByIdPayroll?LedgerId=${widget.ledgerId}',
         {
           "Title_Id": 1,
@@ -505,8 +459,8 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
           "Mob": "",
           "Pin_Code": "",
           "Ledger_Group_Id": 7,
-          "Opening_Bal": _openingBalController.text.toString(),
-          "Opening_Bal_Combo": selectedbalanceTypeId == 109 ? "Cr" : "Dr",
+          "Opening_Bal": "0",
+          "Opening_Bal_Combo": "Dr",
           "Gst_No": _gstNumberController.text.toString(),
           "Address_TA": "",
           "Address2_TA": "",
@@ -606,15 +560,12 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
 // Get Ledger Details
   Future fetchLedger() async {
     final response = await ApiService.fetchData(
-        "MasterPayroll/GetLedgerAllLocationWisePayroll?locationId=3");
+        "MasterPayroll/GetLedgerAllLocationWisePayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
 
     _nameController.text = response[0]['ledger_Name'];
     _addressController.text = response[0]['address'];
-    _openingBalController.text = response[0]['opening_Bal'];
     _gstNumberController.text = response[0]['gst_No'];
     gestDealerId = response[0]['gstTypeId'];
-    selectedbalanceTypeId =
-        response[0]['opening_Bal_Combo'] == 'Cr' ? 109 : 110;
     cityId = response[0]['city_Id'];
     cityName = cityList
         .firstWhere((element) => element['city_Id'] == cityId)['city_Name'];

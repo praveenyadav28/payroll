@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/ui/home/master/ledger/ledger_master.dart';
 import 'package:payroll/utils/button.dart';
@@ -105,8 +106,7 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                     TableRow(children: [
                       tableHeader("Name"),
                       tableHeader("City"),
-                      tableHeader("Opening Balance"),
-                      tableHeader("Credit Type"),
+                      tableHeader("State"),
                       tableHeader("GST Type"),
                       tableHeader("GST Number"),
                       tableHeader("Actions"),
@@ -116,6 +116,8 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                       int cityId = ledger['city_Id'];
                       String cityName = cityList.firstWhere((element) =>
                           element['city_Id'] == cityId)['city_Name'];
+                      String stateName = cityList.firstWhere((element) =>
+                          element['city_Id'] == cityId)['state_Name'];
 
                       int gstDealerId = ledger['gstTypeId'];
                       String gstDealerName = gestDealerList.firstWhere(
@@ -124,8 +126,7 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
                       return TableRow(children: [
                         tableCell(ledger['ledger_Name']),
                         tableCell(cityName),
-                        tableCell(ledger['opening_Bal']),
-                        tableCell(ledger['opening_Bal_Combo']),
+                        tableCell(stateName),
                         tableCell(gstDealerName),
                         tableCell("${ledger['gst_No']}"),
                         SizedBox(
@@ -219,7 +220,7 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
 
   Future getLedgerList() async {
     ledgerList = await ApiService.fetchData(
-        "MasterPayroll/GetLedgerAllLocationWisePayroll?locationId=3");
+        "MasterPayroll/GetLedgerAllLocationWisePayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
   }
 
   //Delete Ledger

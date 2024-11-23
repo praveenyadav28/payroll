@@ -28,6 +28,8 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
   final TextEditingController addressController = TextEditingController();
   final TextEditingController biomaxIdController = TextEditingController();
   final TextEditingController deviceController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
 
   //State
@@ -47,6 +49,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
   int? cityId;
   String cityName = '';
   Map<String, dynamic>? cityValue;
+  String _role = 'Staff';
 
   @override
   void initState() {
@@ -107,7 +110,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                             widget.isNew
                                 ? 'Add Branch Details'
                                 : 'Update Branch Details',
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 20),
@@ -204,7 +207,8 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                       var result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => CityMaster(),
+                                            builder: (context) =>
+                                                const CityMaster(),
                                           ));
                                       if (result != null) {
                                         cityValue = null;
@@ -288,7 +292,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                                DistrictMaster(),
+                                                const DistrictMaster(),
                                           ));
                                       if (result != null) {
                                         districtValue = null;
@@ -372,6 +376,18 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                             ],
                             context: context,
                           ),
+                          addMasterOutside(children: [
+                            _buildTextField(
+                              controller: emailController,
+                              labelText: 'Email Id*',
+                              hintText: 'Email Id',
+                            ),
+                            _buildTextField(
+                              controller: passwordController,
+                              labelText: 'Create Password*',
+                              hintText: 'Create Password',
+                            ),
+                          ], context: context),
                           const SizedBox(height: 20),
                           DefaultButton(
                             borderRadius: BorderRadius.circular(30),
@@ -379,11 +395,15 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                               if (branchNameController.text.isEmpty) {
                                 showCustomSnackbar(
                                     context, 'Please enter Branch Name');
-                              } else if (cityId == null ||
-                                  districtId == null ||
-                                  stateId == null) {
-                                showCustomSnackbar(context,
-                                    'Please enter city, district and state');
+                              } else if (emailController.text.isEmpty) {
+                                showCustomSnackbar(
+                                    context, 'Please enter Email Id');
+                              } else if (passwordController.text.isEmpty) {
+                                showCustomSnackbar(
+                                    context, 'Please enter password');
+                              } else if (cityId == null) {
+                                showCustomSnackbar(
+                                    context, 'Please enter city');
                               } else if (biomaxIdController.text.isEmpty) {
                                 showCustomSnackbar(
                                     context, 'Please enter biomax serial no.');
@@ -463,12 +483,15 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
     branchNameController.text = response[0]['bLocation_Name'];
     descriptionController.text = response[0]['bDes'];
     addressController.text = response[0]['bAddress1'];
+    passwordController.text = response[0]['other1'];
+    emailController.text = response[0]['bEmailId'];
     biomaxIdController.text = response[0]['bDeviceSerialNo'];
     deviceController.text = response[0]['bDeviceName'];
     cityId = int.parse(response[0]['bCity_Id']);
     cityName = response[0]['bCity_Name'];
     districtName = response[0]['bDistrict_Name'];
     stateName = response[0]['bState_Name'];
+    _role = response[0]['other2'];
   }
 
 //Post Branch
@@ -490,15 +513,15 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
           "BPin_Code": "BPin_Code",
           "BStd_Code": "BStd_Code",
           "BContact_No": "BContact_No",
-          "BEmailId": "BEmailId",
+          "BEmailId": emailController.text.toString(),
           "BGSTINNO": "BGSTINNO",
           "BLogoPath": "BLogoPath",
           "BJuridiction": "BJuridiction",
           "BDealerCode": "BDealerCode",
           "BDeviceSerialNo": biomaxIdController.text.toString(),
           "BDeviceName": "${deviceController.text}",
-          "Other1": "Other1",
-          "Other2": "Other2",
+          "Other1": passwordController.text.toString(),
+          "Other2": _role,
           "Other3": "Other3",
           "Other4": "Other4",
           "Other5": "Other5"

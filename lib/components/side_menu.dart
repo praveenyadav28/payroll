@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:payroll/components/prefences.dart';
+import 'package:payroll/ui/home/master/staff/staff_view.dart';
 import 'package:payroll/utils/colors.dart';
 
 class SideMenu extends StatelessWidget {
@@ -43,18 +45,24 @@ class SideMenu extends StatelessWidget {
             title: const Text("Masters"),
             leading: const Icon(Icons.difference_outlined),
             children: [
-              ListTile(
-                leading: const Icon(Icons.business),
-                title: const Text('Branches'),
-                onTap: () {
-                  Navigator.pushReplacementNamed(context, '/branchView');
-                },
-              ),
+              Preference.getString(PrefKeys.userType) == 'Staff'
+                  ? Container()
+                  : ListTile(
+                      leading: const Icon(Icons.business),
+                      title: const Text('Branches'),
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, '/branchView');
+                      },
+                    ),
               ListTile(
                 leading: const Icon(Icons.people),
                 title: const Text('Staff'),
                 onTap: () {
-                  Navigator.pushReplacementNamed(context, '/staffView');
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              StaffViewScreen(staffListType: true)));
                 },
               ),
               ListTile(
@@ -79,9 +87,13 @@ class SideMenu extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.receipt),
-                title: const Text('Vouchers'),
+                title: const Text('Direct Payments'),
                 onTap: () {
-                  Navigator.pushReplacementNamed(context, '/voucher');
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              StaffViewScreen(staffListType: false)));
                 },
               ),
             ],
@@ -92,22 +104,9 @@ class SideMenu extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.receipt),
-                title: const Text('Vouchers'),
+                title: const Text('Payments'),
                 onTap: () {
-                  Navigator.pushReplacementNamed(context, '/voucherView');
-                },
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: const Text("Reports"),
-            leading: const Icon(Icons.report),
-            children: [
-              ListTile(
-                leading: const Icon(Icons.receipt),
-                title: const Text('Expanse'),
-                onTap: () {
-                  Navigator.pushReplacementNamed(context, '/expanse_report');
+                  Navigator.pushReplacementNamed(context, '/paymentView');
                 },
               ),
             ],
@@ -122,6 +121,7 @@ class SideMenu extends StatelessWidget {
               style: TextStyle(color: AppColor.red),
             ),
             onTap: () {
+              logoutPrefData();
               Navigator.pushReplacementNamed(context, '/login');
             },
           ),

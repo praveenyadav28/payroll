@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/model/mismaster_group.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
@@ -216,7 +217,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
         Uri.parse('http://lms.muepetro.com/api/UserController1/PostMiscMaster');
     final data = {
       "Name": Groupcontroller.text,
-      "LocationId": 1,
+      "LocationId": Preference.getString(PrefKeys.locationId),
       "MiscMasterId": widget.sourecID,
     };
     try {
@@ -266,7 +267,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
     var response = await ApiService.postData(
         "UserController1/UpdateMiscMasterById?Id=$id", {
       "Name": controller,
-      "LocationId": 1,
+      "LocationId": Preference.getString(PrefKeys.locationId),
       "MiscMasterId": widget.sourecID,
     });
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

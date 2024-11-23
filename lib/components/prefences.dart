@@ -29,10 +29,14 @@ class Preference {
 }
 
 class PrefKeys {
-  static const password = "password";
+  static const userstatus = "userstatus";
+  static const locationId = "locationId";
+  static const userType = "userType";
 }
 
 logoutPrefData() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.remove(PrefKeys.password);
+  await prefs.remove(PrefKeys.userstatus);
+  await prefs.remove(PrefKeys.locationId);
+  await prefs.remove(PrefKeys.userType);
 }

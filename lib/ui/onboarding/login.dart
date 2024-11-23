@@ -1,7 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
+import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
 import 'package:payroll/utils/container.dart';
+import 'package:payroll/utils/snackbar.dart';
 import 'package:payroll/utils/textformfield.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,36 +19,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  void _login() {
-    // Placeholder for actual login logic
-    String email = _emailController.text;
-    String password = _passwordController.text;
-
-    if (email == 'admin@gmail.com' &&
-        password == "password" /* Preference.getString(PrefKeys.password)*/) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } else {
-      // Show an error message for incorrect login details
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Login Failed'),
-            content: const Text('Incorrect email or password'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +67,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 20),
                         DefaultButton(
                           borderRadius: BorderRadius.circular(30),
-                          onTap: _login,
+                          onTap: () {
+                            if (_emailController.text.isEmpty) {
+                              showCustomSnackbar(
+                                  context, "Please enter Email Id");
+                            } else if (_passwordController.text.isEmpty ||
+                                _passwordController.text.length < 6) {
+                              showCustomSnackbar(
+                                  context, "Please enter valid Password");
+                            } else {
+                              loginPostApi();
+                            }
+                          },
                           hight: 50,
                           width: double.infinity,
                           boxShadow: const [BoxShadow()],
@@ -115,5 +101,25 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       ),
     );
+  }
+
+  Future loginPostApi() async {
+    var response =
+        await ApiService.postData("TransactionsPayroll/PayrollLOGINValid", {
+      "MailId": _emailController.text.toString(),
+      "Password": _passwordController.text.toString(),
+    });
+
+    if (response["result"] == true) {
+      Preference.setBool(PrefKeys.userstatus, response['result']);
+      Preference.setString(PrefKeys.locationId, response['locationId']);
+      Preference.setString(PrefKeys.userType, response['userType']);
+
+      Navigator.pushReplacementNamed(context, '/dashboard');
+
+      showCustomSnackbarSuccess(context, response['message']);
+    } else {
+      showCustomSnackbar(context, response['message']);
+    }
   }
 }

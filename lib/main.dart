@@ -8,9 +8,8 @@ import 'package:payroll/ui/home/master/district_master.dart';
 import 'package:payroll/ui/home/master/ledger/ledger_master.dart';
 import 'package:payroll/ui/home/master/ledger/ledger_view.dart';
 import 'package:payroll/ui/home/master/staff/staff_master.dart';
-import 'package:payroll/ui/home/master/staff/staff_view.dart';
-import 'package:payroll/ui/home/transection/payment.dart';
 import 'package:payroll/ui/home/transection/salary.dart';
+import 'package:payroll/ui/home/view/payment.dart';
 import 'package:payroll/ui/onboarding/login.dart';
 import 'package:payroll/ui/onboarding/splash.dart';
 import 'package:payroll/utils/mediaquery.dart';
@@ -19,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   Preference.preferences = await SharedPreferences.getInstance();
+  Preference.getBool(PrefKeys.userstatus);
   runApp(const MyApp());
 }
 
@@ -50,11 +50,10 @@ class MyApp extends StatelessWidget {
         '/branch': (context) => BranchMasterScreen(isNew: true, branchId: 0),
         '/branchView': (context) => const BranchViewScreen(),
         '/staff': (context) => StaffMasterScreen(isNew: true, staffId: 0),
-        '/staffView': (context) => const StaffViewScreen(),
         '/ledger': (context) => LedgerMasterScreen(isNew: true, ledgerId: 0),
         '/ledgerView': (context) => const LedgerViewScreen(),
         '/salary': (context) => const SalaryScreen(),
-        // '/paymentScreen': (context) => PaymentScreen(paymentVoucherNo: 0),
+        '/paymentView': (context) => const PaymentViewScreen(),
         // '/voucher': (context) => const VoucherScreen(),
         // '/salaryDetails': (context) => const SalaryDetails(),
         // '/voucherView': (context) => const VoucherViewScreen(),

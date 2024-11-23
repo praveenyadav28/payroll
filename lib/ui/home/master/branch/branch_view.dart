@@ -139,9 +139,10 @@ class _BranchViewScreenState extends State<BranchViewScreen> {
                       children: [
                         tableHeader("Branch Name"),
                         tableHeader("City"),
-                        tableHeader("State"),
                         tableHeader("Biomax Serial No."),
                         tableHeader("Device Name"),
+                        tableHeader("Email Id"),
+                        tableHeader("Password"),
                         tableHeader("Actions"),
                       ],
                     ),
@@ -160,9 +161,10 @@ class _BranchViewScreenState extends State<BranchViewScreen> {
                       children: [
                         tableCell(branch.bLocationName),
                         tableCell(branch.bCityName ?? 'N/A'),
-                        tableCell(branch.bStateName ?? 'N/A'),
                         tableCell(branch.bDeviceSerialNo ?? 'N/A'),
                         tableCell(branch.bDeviceName ?? 'N/A'),
+                        tableCell(branch.bEmailId ?? 'N/A'),
+                        tableCell(branch.other1 ?? 'N/A'),
                         TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Row(
