@@ -1,3 +1,5 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
 import 'package:payroll/components/prefences.dart';
@@ -8,8 +10,10 @@ import 'package:payroll/ui/home/transection/payment.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
 import 'package:payroll/utils/container.dart';
+import 'package:payroll/utils/layout.dart';
 import 'package:payroll/utils/mediaquery.dart';
 import 'package:payroll/utils/snackbar.dart';
+import 'package:payroll/utils/textformfield.dart';
 
 class StaffViewScreen extends StatefulWidget {
   StaffViewScreen({required this.staffListType, super.key});
@@ -19,13 +23,24 @@ class StaffViewScreen extends StatefulWidget {
 }
 
 class _StaffViewScreenState extends State<StaffViewScreen> {
+  TextEditingController searchController = TextEditingController();
   List<Staff> staffList = [];
+  List<Staff> filteredList = [];
   List<Map<String, dynamic>> deginationList = [];
+
   @override
   void initState() {
     super.initState();
     deginationData().then((_) => setState(() {}));
     getStaffList().then((_) => setState(() {}));
+  }
+
+  void filterList(String searchText) {
+    setState(() {
+      filteredList = staffList.where((value) {
+        return value.name.toLowerCase().contains(searchText.toLowerCase());
+      }).toList();
+    });
   }
 
   @override
@@ -74,6 +89,17 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
         ),
         child: Column(
           children: [
+            addMasterOutside(children: [
+              CommonTextFormField(
+                  controller: searchController,
+                  onchanged: (value) => filterList(value),
+                  labelText: 'Search',
+                  suffixIcon: Icon(
+                    Icons.search,
+                    size: 30,
+                    color: AppColor.black,
+                  )),
+            ], context: context),
             Container(
               alignment: Alignment.topCenter,
               width: Sizes.width * 1,
@@ -123,8 +149,8 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                     tableHeader("Working Hours"),
                     tableHeader("Action"),
                   ]),
-                  ...List.generate(staffList.length, (index) {
-                    final staff = staffList[index];
+                  ...List.generate(filteredList.length, (index) {
+                    final staff = filteredList[index];
                     int deginationId = staff.designationId;
                     String deginationName = deginationList.isEmpty
                         ? ''
@@ -154,8 +180,8 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                                         builder: (context) => PaymentScreen(
                                             paymentVoucherNo: 0,
                                             employeeData: {
+                                              'id': staff.id,
                                               'name': staff.name,
-                                              'employeeCode': staff.biomaxId,
                                               'monthlySalary':
                                                   staff.monthlySalary,
                                               'dueSalary': 0,
@@ -252,6 +278,9 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
     staffList = (response as List)
         .map((staffData) => Staff.fromJson(staffData))
         .toList();
+    setState(() {
+      filteredList = staffList;
+    });
   }
 
   // Delete Staff

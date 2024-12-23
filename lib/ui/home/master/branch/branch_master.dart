@@ -29,7 +29,8 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
   final TextEditingController biomaxIdController = TextEditingController();
   final TextEditingController deviceController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController adminPasswordController = TextEditingController();
+  final TextEditingController staffPasswordController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
 
   //State
@@ -49,7 +50,9 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
   int? cityId;
   String cityName = '';
   Map<String, dynamic>? cityValue;
-  String _role = 'Staff';
+
+  //calculation type
+  int _selectedOption = 0;
 
   @override
   void initState() {
@@ -114,209 +117,46 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                 fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 20),
-                          addMasterOutside(
-                            children: [
-                              _buildTextField(
-                                controller: branchNameController,
-                                labelText: 'Branch Name*',
-                                hintText: 'Branch Name',
-                              ),
-                              _buildTextField(
-                                controller: descriptionController,
-                                labelText: 'Description',
-                                hintText: 'Description',
-                              ),
-                              _buildTextField(
-                                controller: addressController,
-                                labelText: 'Address',
-                                hintText: 'Address',
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: dropdownTextfield(
-                                        context,
-                                        "City*",
-                                        searchDropDown(
-                                            context,
-                                            cityName.isEmpty
-                                                ? "Select City"
-                                                : cityName,
-                                            cityList
-                                                .map((item) => DropdownMenuItem(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          cityId =
-                                                              item['city_Id'];
-                                                          cityName =
-                                                              item['city_Name'];
-                                                          districtId = item[
-                                                              'district_Id'];
-                                                          districtName = item[
-                                                              'district_Name'];
-                                                          stateId =
-                                                              item['state_Id'];
-                                                          stateName = item[
-                                                              'state_Name'];
-                                                        });
-                                                      },
-                                                      value: item,
-                                                      child: Text(
-                                                        item['city_Name']
-                                                            .toString(),
-                                                        style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color:
-                                                                AppColor.black),
-                                                      ),
-                                                    ))
-                                                .toList(),
-                                            cityValue,
-                                            (value) {
-                                              setState(() {
-                                                cityValue = value;
-                                              });
-                                            },
-                                            searchController,
-                                            (value) {
-                                              setState(() {
-                                                cityList
-                                                    .where((item) =>
-                                                        item['city_Name']
-                                                            .toString()
-                                                            .toLowerCase()
-                                                            .contains(value
-                                                                .toLowerCase()))
-                                                    .toList();
-                                              });
-                                            },
-                                            'Search for a City...',
-                                            (isOpen) {
-                                              if (!isOpen) {
-                                                searchController.clear();
-                                              }
-                                            })),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  addDefaultButton(
-                                    context,
-                                    () async {
-                                      var result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const CityMaster(),
-                                          ));
-                                      if (result != null) {
-                                        cityValue = null;
-                                        fetchCity()
-                                            .then((value) => setState(() {}));
-                                      }
-                                    },
-                                  )
-                                ],
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: dropdownTextfield(
-                                        context,
-                                        "District*",
-                                        searchDropDown(
-                                            context,
-                                            districtName.isEmpty
-                                                ? "Select District"
-                                                : districtName,
-                                            districtList
-                                                .map((item) => DropdownMenuItem(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          districtId = item[
-                                                              'district_Id'];
-                                                          districtName = item[
-                                                              'district_Name'];
-                                                          stateId =
-                                                              item['state_Id'];
-                                                          stateName = item[
-                                                              'state_Name'];
-                                                        });
-                                                      },
-                                                      value: item,
-                                                      child: Text(
-                                                        item['district_Name']
-                                                            .toString(),
-                                                        style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color:
-                                                                AppColor.black),
-                                                      ),
-                                                    ))
-                                                .toList(),
-                                            districtValue,
-                                            (value) {
-                                              setState(() {
-                                                districtValue = value;
-                                              });
-                                            },
-                                            searchController,
-                                            (value) {
-                                              setState(() {
-                                                districtList
-                                                    .where((item) =>
-                                                        item['district_Name']
-                                                            .toString()
-                                                            .toLowerCase()
-                                                            .contains(value
-                                                                .toLowerCase()))
-                                                    .toList();
-                                              });
-                                            },
-                                            'Search for a District...',
-                                            (isOpen) {
-                                              if (!isOpen) {
-                                                searchController.clear();
-                                              }
-                                            })),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  addDefaultButton(
-                                    context,
-                                    () async {
-                                      var result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const DistrictMaster(),
-                                          ));
-                                      if (result != null) {
-                                        districtValue = null;
-                                        fetchDistrict()
-                                            .then((value) => setState(() {}));
-                                      }
-                                    },
-                                  )
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  dropdownTextfield(
+                          addMasterOutside(children: [
+                            _buildTextField(
+                              controller: branchNameController,
+                              labelText: 'Branch Name*',
+                              hintText: 'Branch Name',
+                            ),
+                            _buildTextField(
+                              controller: descriptionController,
+                              labelText: 'Description',
+                              hintText: 'Description',
+                            ),
+                            _buildTextField(
+                              controller: addressController,
+                              labelText: 'Address',
+                              hintText: 'Address',
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: dropdownTextfield(
                                       context,
-                                      "State*",
+                                      "City*",
                                       searchDropDown(
                                           context,
-                                          stateName.isEmpty
-                                              ? "Select State"
-                                              : stateName,
-                                          stateList
+                                          cityName.isEmpty
+                                              ? "Select City"
+                                              : cityName,
+                                          cityList
                                               .map((item) => DropdownMenuItem(
                                                     onTap: () {
                                                       setState(() {
+                                                        cityId =
+                                                            item['city_Id'];
+                                                        cityName =
+                                                            item['city_Name'];
+                                                        districtId =
+                                                            item['district_Id'];
+                                                        districtName = item[
+                                                            'district_Name'];
                                                         stateId =
                                                             item['state_Id'];
                                                         stateName =
@@ -325,7 +165,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                                     },
                                                     value: item,
                                                     child: Text(
-                                                      item['state_Name']
+                                                      item['city_Name']
                                                           .toString(),
                                                       style: TextStyle(
                                                           fontSize: 16,
@@ -336,18 +176,18 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                                     ),
                                                   ))
                                               .toList(),
-                                          stateValue,
+                                          cityValue,
                                           (value) {
                                             setState(() {
-                                              stateValue = value;
+                                              cityValue = value;
                                             });
                                           },
                                           searchController,
                                           (value) {
                                             setState(() {
-                                              stateList
+                                              cityList
                                                   .where((item) =>
-                                                      item['state_Name']
+                                                      item['city_Name']
                                                           .toString()
                                                           .toLowerCase()
                                                           .contains(value
@@ -355,37 +195,242 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                                   .toList();
                                             });
                                           },
-                                          'Search for a State...',
+                                          'Search for a City...',
                                           (isOpen) {
                                             if (!isOpen) {
                                               searchController.clear();
                                             }
                                           })),
-                                ],
-                              ),
-                              _buildTextField(
-                                controller: biomaxIdController,
-                                labelText: 'Biomax Serial No.*',
-                                hintText: 'Biomax Serial No.',
-                              ),
-                              _buildTextField(
-                                controller: deviceController,
-                                labelText: 'Device Name',
-                                hintText: 'Device Name',
-                              ),
-                            ],
-                            context: context,
-                          ),
-                          addMasterOutside(children: [
+                                ),
+                                const SizedBox(width: 10),
+                                addDefaultButton(
+                                  context,
+                                  () async {
+                                    var result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const CityMaster(),
+                                        ));
+                                    if (result != null) {
+                                      cityValue = null;
+                                      fetchCity()
+                                          .then((value) => setState(() {}));
+                                    }
+                                  },
+                                )
+                              ],
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: dropdownTextfield(
+                                      context,
+                                      "District*",
+                                      searchDropDown(
+                                          context,
+                                          districtName.isEmpty
+                                              ? "Select District"
+                                              : districtName,
+                                          districtList
+                                              .map((item) => DropdownMenuItem(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        districtId =
+                                                            item['district_Id'];
+                                                        districtName = item[
+                                                            'district_Name'];
+                                                        stateId =
+                                                            item['state_Id'];
+                                                        stateName =
+                                                            item['state_Name'];
+                                                      });
+                                                    },
+                                                    value: item,
+                                                    child: Text(
+                                                      item['district_Name']
+                                                          .toString(),
+                                                      style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color:
+                                                              AppColor.black),
+                                                    ),
+                                                  ))
+                                              .toList(),
+                                          districtValue,
+                                          (value) {
+                                            setState(() {
+                                              districtValue = value;
+                                            });
+                                          },
+                                          searchController,
+                                          (value) {
+                                            setState(() {
+                                              districtList
+                                                  .where((item) =>
+                                                      item['district_Name']
+                                                          .toString()
+                                                          .toLowerCase()
+                                                          .contains(value
+                                                              .toLowerCase()))
+                                                  .toList();
+                                            });
+                                          },
+                                          'Search for a District...',
+                                          (isOpen) {
+                                            if (!isOpen) {
+                                              searchController.clear();
+                                            }
+                                          })),
+                                ),
+                                const SizedBox(width: 10),
+                                addDefaultButton(
+                                  context,
+                                  () async {
+                                    var result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const DistrictMaster(),
+                                        ));
+                                    if (result != null) {
+                                      districtValue = null;
+                                      fetchDistrict()
+                                          .then((value) => setState(() {}));
+                                    }
+                                  },
+                                )
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                dropdownTextfield(
+                                    context,
+                                    "State*",
+                                    searchDropDown(
+                                        context,
+                                        stateName.isEmpty
+                                            ? "Select State"
+                                            : stateName,
+                                        stateList
+                                            .map((item) => DropdownMenuItem(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      stateId =
+                                                          item['state_Id'];
+                                                      stateName =
+                                                          item['state_Name'];
+                                                    });
+                                                  },
+                                                  value: item,
+                                                  child: Text(
+                                                    item['state_Name']
+                                                        .toString(),
+                                                    style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: AppColor.black),
+                                                  ),
+                                                ))
+                                            .toList(),
+                                        stateValue,
+                                        (value) {
+                                          setState(() {
+                                            stateValue = value;
+                                          });
+                                        },
+                                        searchController,
+                                        (value) {
+                                          setState(() {
+                                            stateList
+                                                .where((item) =>
+                                                    item['state_Name']
+                                                        .toString()
+                                                        .toLowerCase()
+                                                        .contains(value
+                                                            .toLowerCase()))
+                                                .toList();
+                                          });
+                                        },
+                                        'Search for a State...',
+                                        (isOpen) {
+                                          if (!isOpen) {
+                                            searchController.clear();
+                                          }
+                                        })),
+                              ],
+                            ),
+                            _buildTextField(
+                              controller: biomaxIdController,
+                              labelText: 'Biomax Serial No.*',
+                              hintText: 'Biomax Serial No.',
+                            ),
+                            _buildTextField(
+                              controller: deviceController,
+                              labelText: 'Device Name',
+                              hintText: 'Device Name',
+                            ),
+                            Column(
+                              children: [
+                                dropdownTextfield(
+                                  context,
+                                  '',
+                                  Row(
+                                    children: [
+                                      Radio<int>(
+                                        value: 0,
+                                        groupValue: _selectedOption,
+                                        onChanged: (int? value) {
+                                          setState(() {
+                                            _selectedOption = value!;
+                                          });
+                                        },
+                                      ),
+                                      Text('Institute',
+                                          style: TextStyle(
+                                              color: AppColor.black,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
+                                      Spacer(),
+                                      Radio<int>(
+                                        value: 1,
+                                        groupValue: _selectedOption,
+                                        onChanged: (int? value) {
+                                          setState(() {
+                                            _selectedOption = value!;
+                                          });
+                                        },
+                                      ),
+                                      Text(
+                                        'Petrol Pump ',
+                                        style: TextStyle(
+                                            color: AppColor.black,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                             _buildTextField(
                               controller: emailController,
                               labelText: 'Email Id*',
                               hintText: 'Email Id',
                             ),
                             _buildTextField(
-                              controller: passwordController,
-                              labelText: 'Create Password*',
-                              hintText: 'Create Password',
+                              controller: adminPasswordController,
+                              labelText: 'Admin Password*',
+                              hintText: 'Admin Password',
+                            ),
+                            _buildTextField(
+                              controller: staffPasswordController,
+                              labelText: 'Staff Password*',
+                              hintText: 'Staff Password',
                             ),
                           ], context: context),
                           const SizedBox(height: 20),
@@ -398,7 +443,8 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                               } else if (emailController.text.isEmpty) {
                                 showCustomSnackbar(
                                     context, 'Please enter Email Id');
-                              } else if (passwordController.text.isEmpty) {
+                              } else if (adminPasswordController.text.isEmpty ||
+                                  staffPasswordController.text.isEmpty) {
                                 showCustomSnackbar(
                                     context, 'Please enter password');
                               } else if (cityId == null) {
@@ -483,7 +529,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
     branchNameController.text = response[0]['bLocation_Name'];
     descriptionController.text = response[0]['bDes'];
     addressController.text = response[0]['bAddress1'];
-    passwordController.text = response[0]['other1'];
+    adminPasswordController.text = response[0]['other1'];
     emailController.text = response[0]['bEmailId'];
     biomaxIdController.text = response[0]['bDeviceSerialNo'];
     deviceController.text = response[0]['bDeviceName'];
@@ -491,7 +537,8 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
     cityName = response[0]['bCity_Name'];
     districtName = response[0]['bDistrict_Name'];
     stateName = response[0]['bState_Name'];
-    _role = response[0]['other2'];
+    staffPasswordController.text = response[0]['other3'];
+    _selectedOption = int.parse(response[0]['other5']);
   }
 
 //Post Branch
@@ -520,11 +567,11 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
           "BDealerCode": "BDealerCode",
           "BDeviceSerialNo": biomaxIdController.text.toString(),
           "BDeviceName": "${deviceController.text}",
-          "Other1": passwordController.text.toString(),
-          "Other2": _role,
-          "Other3": "Other3",
-          "Other4": "Other4",
-          "Other5": "Other5"
+          "Other1": adminPasswordController.text.toString(),
+          "Other2": widget.branchId == 3 ? 'Admin' : 'Staff',
+          "Other3": staffPasswordController.text.toString(),
+          "Other4": "2",
+          "Other5": "$_selectedOption"
         });
     if (response['result'] == true) {
       showCustomSnackbarSuccess(context, '${response["message"]}');

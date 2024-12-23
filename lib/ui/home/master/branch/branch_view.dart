@@ -142,7 +142,8 @@ class _BranchViewScreenState extends State<BranchViewScreen> {
                         tableHeader("Biomax Serial No."),
                         tableHeader("Device Name"),
                         tableHeader("Email Id"),
-                        tableHeader("Password"),
+                        tableHeader("Admin Password"),
+                        tableHeader("Staff Password"),
                         tableHeader("Actions"),
                       ],
                     ),
@@ -165,6 +166,7 @@ class _BranchViewScreenState extends State<BranchViewScreen> {
                         tableCell(branch.bDeviceName ?? 'N/A'),
                         tableCell(branch.bEmailId ?? 'N/A'),
                         tableCell(branch.other1 ?? 'N/A'),
+                        tableCell(branch.other3 ?? 'N/A'),
                         TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Row(

@@ -56,16 +56,23 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
               payment.mode!.toLowerCase().contains(
                   query)) // Assuming `name` is a field in PaymentModel
           .toList();
+
+      totalAmount = _filteredPayments.fold(
+          0, (sum, payment) => sum + double.parse(payment.cashAmount!));
       _streamController.add(_filteredPayments);
     });
   }
 
+  double totalAmount = 0;
   // Fetch payments and add data to the stream
   Future<void> _fetchPaymentsAndStream() async {
     try {
       List<PaymentModel> payments = await fetchPayments();
       _allPayments = payments;
       _filteredPayments = payments;
+
+      totalAmount = _filteredPayments.fold(
+          0, (sum, payment) => sum + double.parse(payment.cashAmount!));
       _streamController.add(payments); // Add data to the stream
     } catch (error) {
       _streamController.addError(error); // Add error to the stream
@@ -258,161 +265,187 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                       ],
                     ),
                     Table(
-                      border: TableBorder.all(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
+                        border: TableBorder.all(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
+                          ),
+                          color: const Color(0xff377785),
                         ),
-                        color: const Color(0xff377785),
-                      ),
-                      children: paymentList.map((payment) {
-                        return TableRow(
-                          children: [
-                            tableCell("${payment.pvNo}"),
-                            tableCell(payment.paymentDate!.substring(
-                                0, payment.paymentDate!.length - 12)),
-                            tableCell(payment.ledgerName ?? 'N/A'),
-                            tableCell(payment.cashAmount ?? 'N/A'),
-                            tableCell(payment.mode ?? 'N/A'),
-                            TableCell(
-                              verticalAlignment:
-                                  TableCellVerticalAlignment.middle,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    icon:
-                                        Icon(Icons.edit, color: AppColor.green),
-                                    onPressed: () async {
-                                      var result = await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PaymentScreen(
-                                            paymentVoucherNo: payment.pvNo!,
-                                            employeeData: {
-                                              'name': payment.ledgerName,
-                                              'employeeCode': payment.ledgerId,
-                                              'monthlySalary': double.parse(
-                                                  payment.other3!.length == 0
-                                                      ? '0'
-                                                      : payment.other3!),
-                                              'dueSalary': double.parse(
-                                                  payment.other2!.length == 0
-                                                      ? '0'
-                                                      : payment.other2!),
-                                            },
-                                          ),
-                                        ),
-                                      );
-                                      if (result != null) {
-                                        _fetchPaymentsAndStream(); // Refresh data
-                                      }
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.visibility,
-                                        color: AppColor.primery),
-                                    onPressed: () {
-                                      showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: const Text(
-                                                  'Other Payment Details'),
-                                              content: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  ReuseContainer(
-                                                      title: "Monthly Salary",
-                                                      subtitle: payment.other3!
-                                                                  .length ==
+                        children: [
+                          ...paymentList.map((payment) {
+                            return TableRow(
+                              children: [
+                                tableCell("${payment.pvNo}"),
+                                tableCell(payment.paymentDate!.substring(
+                                    0, payment.paymentDate!.length - 12)),
+                                tableCell(payment.ledgerName ?? 'N/A'),
+                                tableCell(payment.cashAmount ?? 'N/A'),
+                                tableCell(payment.mode ?? 'N/A'),
+                                TableCell(
+                                  verticalAlignment:
+                                      TableCellVerticalAlignment.middle,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.edit,
+                                            color: AppColor.green),
+                                        onPressed: () async {
+                                          var result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  PaymentScreen(
+                                                paymentVoucherNo: payment.pvNo!,
+                                                employeeData: {
+                                                  'id': payment.ledgerId,
+                                                  'name': payment.ledgerName,
+                                                  'monthlySalary': double.parse(
+                                                      payment.other3!.length ==
                                                               0
                                                           ? '0'
-                                                          : payment.other3 ??
-                                                              '0'),
-                                                  SizedBox(
-                                                      height:
-                                                          Sizes.height * 0.02),
-                                                  ReuseContainer(
-                                                      title: "Payabe Amount",
-                                                      subtitle:
-                                                          payment.other2!),
-                                                  SizedBox(
-                                                      height:
-                                                          Sizes.height * 0.02),
-                                                  ReuseContainer(
-                                                      title:
-                                                          "Sattlement Amount",
-                                                      subtitle:
-                                                          payment.totalAmount!),
-                                                  SizedBox(
-                                                      height:
-                                                          Sizes.height * 0.02),
-                                                  Container(
-                                                    decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
-                                                        color: AppColor.white,
-                                                        border: Border.all(
-                                                          color: AppColor.grey,
-                                                        ),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                              blurRadius: 2,
-                                                              color: AppColor
-                                                                  .white)
-                                                        ]),
-                                                    child: ListTile(
-                                                      title: Text("Remark",
-                                                          style: TextStyle(
-                                                              color: AppColor
-                                                                  .black,
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500)),
-                                                      subtitle: Text(
-                                                          payment.other1!,
-                                                          style: TextStyle(
-                                                              color: AppColor
-                                                                  .primery,
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500)),
-                                                    ),
-                                                  )
-                                                ],
+                                                          : payment.other3!),
+                                                  'dueSalary': double.parse(
+                                                      payment.other2!.length ==
+                                                              0
+                                                          ? '0'
+                                                          : payment.other2!),
+                                                },
                                               ),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  child: const Text('Close'),
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
+                                            ),
+                                          );
+                                          if (result != null) {
+                                            _fetchPaymentsAndStream(); // Refresh data
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.visibility,
+                                            color: AppColor.primery),
+                                        onPressed: () {
+                                          showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                      'Other Payment Details'),
+                                                  content: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      ReuseContainer(
+                                                          title:
+                                                              "Monthly Salary",
+                                                          subtitle: payment
+                                                                      .other3!
+                                                                      .length ==
+                                                                  0
+                                                              ? '0'
+                                                              : payment
+                                                                      .other3 ??
+                                                                  '0'),
+                                                      SizedBox(
+                                                          height: Sizes.height *
+                                                              0.02),
+                                                      ReuseContainer(
+                                                          title:
+                                                              "Payabe Amount",
+                                                          subtitle:
+                                                              payment.other2!),
+                                                      SizedBox(
+                                                          height: Sizes.height *
+                                                              0.02),
+                                                      ReuseContainer(
+                                                          title:
+                                                              "Sattlement Amount",
+                                                          subtitle: payment
+                                                              .totalAmount!),
+                                                      SizedBox(
+                                                          height: Sizes.height *
+                                                              0.02),
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            10),
+                                                                color: AppColor.white,
+                                                                border: Border.all(
+                                                                  color:
+                                                                      AppColor
+                                                                          .grey,
+                                                                ),
+                                                                boxShadow: [
+                                                              BoxShadow(
+                                                                  blurRadius: 2,
+                                                                  color: AppColor
+                                                                      .white)
+                                                            ]),
+                                                        child: ListTile(
+                                                          title: Text("Remark",
+                                                              style: TextStyle(
+                                                                  color: AppColor
+                                                                      .black,
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500)),
+                                                          subtitle: Text(
+                                                              payment.other1!,
+                                                              style: TextStyle(
+                                                                  color: AppColor
+                                                                      .primery,
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500)),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  ),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      child:
+                                                          const Text('Close'),
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              });
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.delete,
+                                            color: AppColor.red),
+                                        onPressed: () {
+                                          deletePaymentApi(payment.pvNo).then(
+                                            (value) =>
+                                                _fetchPaymentsAndStream(),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  IconButton(
-                                    icon:
-                                        Icon(Icons.delete, color: AppColor.red),
-                                    onPressed: () {
-                                      deletePaymentApi(payment.srNo).then(
-                                        (value) => _fetchPaymentsAndStream(),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          TableRow(children: [
+                            tableCell(''),
+                            tableCell(''),
+                            tableCell('Total'),
+                            tableCell('₹ $totalAmount'),
+                            tableCell(''),
+                            SizedBox(
+                                height: Sizes.height * 0.07,
+                                child: tableCell('')),
+                          ])
+                        ]),
                   ],
                 );
               },

@@ -9,6 +9,8 @@ import 'package:payroll/utils/mediaquery.dart';
 import 'package:payroll/utils/snackbar.dart';
 import 'package:payroll/utils/textformfield.dart';
 
+import '../../../components/prefences.dart';
+
 class DistrictMaster extends StatefulWidget {
   const DistrictMaster({super.key});
   @override
@@ -336,7 +338,7 @@ class _DistrictMasterState extends State<DistrictMaster> {
         await ApiService.postData('MasterPayroll/PostDistrictPayroll', {
       "District_Name": districtController.text.toString(),
       "State_Id": stateId,
-      "Location_Id": 1
+      "Location_Id": int.parse(Preference.getString(PrefKeys.locationId))
     });
     if (response['result'] == true) {
       showCustomSnackbarSuccess(context, '${response["message"]}');
@@ -500,7 +502,7 @@ class _EditDistrictState extends State<EditDistrict> {
         'MasterPayroll/UpdateDistrictByIdPayroll?Id=$id', {
       "District_Name": widget.districtControllerEdit.text.toString(),
       "State_Id": widget.stateId,
-      "Location_Id": 1
+      "Location_Id": int.parse(Preference.getString(PrefKeys.locationId))
     });
     if (response['result'] == true) {
       showCustomSnackbarSuccess(context, '${response["message"]}');

@@ -19,6 +19,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String selectedRole = "Admin";
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +66,43 @@ class _LoginScreenState extends State<LoginScreen> {
                           hintText: "Password",
                         ),
                         const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Row(
+                              children: [
+                                Radio<String>(
+                                  value: "Admin",
+                                  activeColor: AppColor.primery,
+                                  groupValue: selectedRole,
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      selectedRole = value!;
+                                    });
+                                  },
+                                ),
+                                const Text('Admin'),
+                              ],
+                            ),
+                            const SizedBox(width: 20),
+                            Row(
+                              children: [
+                                Radio<String>(
+                                  value: "SubAdmin",
+                                  activeColor: AppColor.primery,
+                                  groupValue: selectedRole,
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      selectedRole = value!;
+                                    });
+                                  },
+                                ),
+                                const Text('Subadmin'),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
                         DefaultButton(
                           borderRadius: BorderRadius.circular(30),
                           onTap: () {
@@ -108,14 +146,20 @@ class _LoginScreenState extends State<LoginScreen> {
         await ApiService.postData("TransactionsPayroll/PayrollLOGINValid", {
       "MailId": _emailController.text.toString(),
       "Password": _passwordController.text.toString(),
+      'AccessType': selectedRole
     });
 
     if (response["result"] == true) {
       Preference.setBool(PrefKeys.userstatus, response['result']);
       Preference.setString(PrefKeys.locationId, response['locationId']);
       Preference.setString(PrefKeys.userType, response['userType']);
+      Preference.setString(PrefKeys.accessType, selectedRole);
+      Preference.setString(PrefKeys.calculationType, response['other5']);
+      Preference.setString(PrefKeys.coludId, response['bDeviceSerialNo']);
 
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      selectedRole == "SubAdmin"
+          ? Navigator.pushReplacementNamed(context, '/attendance')
+          : Navigator.pushReplacementNamed(context, '/dashboard');
 
       showCustomSnackbarSuccess(context, response['message']);
     } else {

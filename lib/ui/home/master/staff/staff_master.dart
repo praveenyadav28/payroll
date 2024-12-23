@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/ui/home/master/city_master.dart';
 import 'package:payroll/ui/home/master/district_master.dart';
@@ -711,7 +712,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
           "Mob": _mobileNumberController.text.trim().toString(),
           "Staff_Degination_Id": deginationId,
           "Staff_Department_Id": departmentId,
-          "Location_Id": 3,
+          "Location_Id": int.parse(Preference.getString(PrefKeys.locationId)),
           "Dob_Date": dobDatePicker.text.trim().toString(),
           "Joining_Date": joingDatePicker.text.trim().toString(),
           "Left_Date": "BJuridiction",

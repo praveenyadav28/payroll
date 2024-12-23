@@ -158,7 +158,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             controller: nameController,
                             labelText: 'Staff Name*'),
                         ReuseContainer(
-                            title: "Due Balance", subtitle: dueBalance),
+                            title: double.parse(dueBalance) < 0
+                                ? "Advance Balance"
+                                : 'Due Balance',
+                            subtitle: "${double.parse(dueBalance).abs()}"),
                       ]),
                       widget.employeeData!['dueSalary'] == 0
                           ? Container()
@@ -300,19 +303,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ? "TransactionsPayroll/PostPaymentVoucherPayroll"
               : "TransactionsPayroll/UpdatePaymentVoucherPayroll?prefix=online&refno=${pvNoController.text}&locationid=${Preference.getString(PrefKeys.locationId)}",
           {
-            "Location_Id": 3,
+            "Location_Id": int.parse(Preference.getString(PrefKeys.locationId)),
             "Prefix_Name": "online",
             "Pv_No": int.parse(pvNoController.text),
             "Payment_Date": pvDate.text.toString(),
-            "Ledger_Id": int.parse("${widget.employeeData!['employeeCode']}"),
+            "Ledger_Id": int.parse("${widget.employeeData!['id']}"),
             "Ledger_Name": widget.employeeData!['name'],
             "Total_Amount": widget.employeeData!['dueSalary'] == 0
                 ? "0"
                 : sattlementSalaryController.text.toString(),
             "Cash_Amount": paidController.text.toString(),
-            "Balance_Amount": widget.employeeData!['dueSalary'] == 0
-                ? paidController.text.toString()
-                : "${double.parse(sattlementSalaryController.text.toString()) - double.parse(paidController.text.toString())}",
+            "Balance_Amount":
+                "${double.parse(dueBalance) + double.parse(paidController.text.toString())}",
             "Voucher_Mode_Id": voucherId,
             "Mode": voucherName,
             "Cheque_No": "",
@@ -364,7 +366,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 //Get Due Balance
   Future fatchDueBalance() async {
     var response = await ApiService.fetchData(
-        "TransactionsPayroll/GetBalanceSalaryAmountPayroll?StaffId=${widget.employeeData!['employeeCode']}&locationid=${Preference.getString(PrefKeys.locationId)}&dateto=${pvDate.text}");
+        "TransactionsPayroll/GetBalanceSalaryAmountPayroll?StaffId=${widget.employeeData!['id']}&locationid=${Preference.getString(PrefKeys.locationId)}&dateto=${pvDate.text}");
     dueBalance = "$response";
   }
 

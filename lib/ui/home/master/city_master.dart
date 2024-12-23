@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:payroll/components/api.dart';
+import 'package:payroll/components/prefences.dart';
 import 'package:payroll/ui/home/master/district_master.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
@@ -367,7 +368,7 @@ class _CityMasterState extends State<CityMaster> {
     var response = await ApiService.postData('MasterPayroll/PostCityPayroll', {
       "City_Name": cityController.text.toString(),
       "District_Id": districtId,
-      "Location_Id": 1
+      "Location_Id": int.parse(Preference.getString(PrefKeys.locationId)),
     });
     if (response['result'] == true) {
       showCustomSnackbarSuccess(context, '${response["message"]}');
@@ -538,7 +539,7 @@ class _EditCityState extends State<EditCity> {
         'MasterPayroll/UpdateCityByIdPayroll?Id=$id', {
       "City_Name": widget.cityControllerEdit.text.toString(),
       "District_Id": widget.districtId,
-      "Location_Id": 1
+      "Location_Id": int.parse(Preference.getString(PrefKeys.locationId))
     });
     if (response['result'] == true) {
       showCustomSnackbarSuccess(context, '${response["message"]}');

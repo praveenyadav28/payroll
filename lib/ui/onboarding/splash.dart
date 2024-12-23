@@ -18,7 +18,9 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 2), () {
       Preference.getBool(PrefKeys.userstatus) == false
           ? Navigator.pushReplacementNamed(context, '/login')
-          : Navigator.pushReplacementNamed(context, '/dashboard');
+          : Preference.getString(PrefKeys.accessType) == "SubAdmin"
+              ? Navigator.pushReplacementNamed(context, '/attendance')
+              : Navigator.pushReplacementNamed(context, '/dashboard');
     });
   }
 

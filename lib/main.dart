@@ -9,6 +9,7 @@ import 'package:payroll/ui/home/master/ledger/ledger_master.dart';
 import 'package:payroll/ui/home/master/ledger/ledger_view.dart';
 import 'package:payroll/ui/home/master/staff/staff_master.dart';
 import 'package:payroll/ui/home/transection/salary.dart';
+import 'package:payroll/ui/home/view/attendence.dart';
 import 'package:payroll/ui/home/view/payment.dart';
 import 'package:payroll/ui/onboarding/login.dart';
 import 'package:payroll/ui/onboarding/splash.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
         '/ledgerView': (context) => const LedgerViewScreen(),
         '/salary': (context) => const SalaryScreen(),
         '/paymentView': (context) => const PaymentViewScreen(),
+        '/attendance': (context) => const Attendence(),
         // '/voucher': (context) => const VoucherScreen(),
         // '/salaryDetails': (context) => const SalaryDetails(),
         // '/voucherView': (context) => const VoucherViewScreen(),
@@ -217,7 +219,7 @@ class MyApp extends StatelessWidget {
 
 // class ApiService {
 //   final String employeeApiUrl =
-//       'http://lms.muepetro.com/api/MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=3';
+//       'http://lms.muepetro.com/api/MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=12';
 
 //   Future<List<Employee>> fetchEmployees() async {
 //     final response = await http.get(Uri.parse(employeeApiUrl));
@@ -451,6 +453,285 @@ class MyApp extends StatelessWidget {
 //           ],
 //         );
 //       },
+//     );
+//   }
+// }
+
+
+// import 'dart:convert';
+// import 'package:flutter/material.dart';
+// import 'package:http/http.dart' as http;
+
+// class Employee {
+//   final int id;
+//   final String name;
+//   final String employeeCode;
+//   final double monthlySalary;
+//   final double workingHours;
+
+//   Employee({
+//     required this.id,
+//     required this.name,
+//     required this.employeeCode,
+//     required this.monthlySalary,
+//     required this.workingHours,
+//   });
+
+//   factory Employee.fromJson(Map<String, dynamic> json) {
+//     return Employee(
+//       id: json['id'],
+//       name: json['staff_Name'],
+//       employeeCode: json['biomaxId'],
+//       monthlySalary: double.parse(json['salary']),
+//       workingHours: double.parse(json['other1']),
+//     );
+//   }
+// }
+
+// class DeviceLog {
+//   final String employeeCode;
+//   final String punchDirection;
+//   final String serialNumber;
+//   final DateTime logDate;
+//   final DateTime punchTime;
+
+//   DeviceLog({
+//     required this.employeeCode,
+//     required this.punchDirection,
+//     required this.serialNumber,
+//     required this.logDate,
+//     required this.punchTime,
+//   });
+
+//   factory DeviceLog.fromJson(Map<String, dynamic> json) {
+//     return DeviceLog(
+//       employeeCode: json['EmployeeCode'],
+//       punchDirection: json['PunchDirection'],
+//       serialNumber: json['SerialNumber'],
+//       logDate: DateTime.parse("${json['LogDate']}"),
+//       punchTime: DateTime.parse("${json['LogDate']}"),
+//     );
+//   }
+// }
+
+// class ApiService {
+//   final String employeeApiUrl =
+//       'http://lms.muepetro.com/api/MasterPayroll/GetStaffDetailsLocationwisePayroll?locationId=12';
+
+//   Future<List<Employee>> fetchEmployees() async {
+//     final response = await http.get(Uri.parse(employeeApiUrl));
+//     if (response.statusCode == 200) {
+//       final List<dynamic> data = json.decode(response.body);
+//       return data.map((json) => Employee.fromJson(json)).toList();
+//     } else {
+//       throw Exception('Failed to load employees');
+//     }
+//   }
+
+//   Future<List<DeviceLog>> fetchLogs(String fromDate, String toDate) async {
+//     final response = await http.get(Uri.parse(
+//         "http://103.178.113.149:82/api/v2/WebAPI/GetDeviceLogs?APIKey=555312092406&FromDate=$fromDate&ToDate=$toDate"));
+//     if (response.statusCode == 200) {
+//       final List<dynamic> data = json.decode(response.body);
+//       return data.map((json) => DeviceLog.fromJson(json)).toList();
+//     } else {
+//       throw Exception('Failed to load device logs');
+//     }
+//   }
+// }
+
+// void main() => runApp(const MyApp());
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       home: PayrollScreen(),
+//     );
+//   }
+// }
+
+// class PayrollScreen extends StatefulWidget {
+//   @override
+//   _PayrollScreenState createState() => _PayrollScreenState();
+// }
+
+// class _PayrollScreenState extends State<PayrollScreen> {
+//   final ApiService apiService = ApiService();
+//   List<Employee> employees = [];
+//   List<DeviceLog> logs = [];
+//   bool isLoading = true;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchData();
+//   }
+
+//   Future<void> fetchData() async {
+//     try {
+//       List<Employee> fetchedEmployees = await apiService.fetchEmployees();
+//       List<DeviceLog> fetchedLogs = await apiService.fetchLogs(
+//           "2024-12-01", "2024-12-31"); // Example date range
+//       setState(() {
+//         employees = fetchedEmployees;
+//         logs = fetchedLogs;
+//         isLoading = false;
+//       });
+//     } catch (e) {
+//       setState(() {
+//         isLoading = false;
+//       });
+//       print("Error: $e");
+//     }
+//   }
+
+//   void showShiftsDialog(BuildContext context, Employee employee) {
+//     const double standardShiftHours = 8.0; // Standard working hours per shift
+//     double dailySalary =
+//         employee.monthlySalary / 30; // Approximate daily salary
+//     double hourlyRate = dailySalary / standardShiftHours; // Hourly rate
+
+//     // Filter logs for the specific employee
+//     List<DeviceLog> employeeLogs = logs
+//         .where((log) =>
+//             log.employeeCode == employee.employeeCode && log.serialNumber == '')
+//         .toList();
+
+//     List<Map<String, String>> shifts = [];
+//     int totalShifts = 0;
+//     double calculatedMonthlySalary = 0;
+
+//     for (int i = 0; i < employeeLogs.length; i++) {
+//       if (employeeLogs[i].punchDirection == "in") {
+//         DateTime punchInTime = employeeLogs[i].punchTime;
+//         DateTime? punchOutTime;
+//         double hoursWorked;
+
+//         if (i + 1 < employeeLogs.length &&
+//             employeeLogs[i + 1].punchDirection == "out") {
+//           punchOutTime = employeeLogs[i + 1].punchTime;
+//           hoursWorked =
+//               punchOutTime.difference(punchInTime).inMinutes / 60.0; // Hours
+//         } else {
+//           punchOutTime = null;
+//           hoursWorked = standardShiftHours; // Assume full shift worked
+//         }
+
+//         // Salary Calculation
+//         double calculatedSalary;
+//         int shiftsCount;
+//         String differenceText;
+
+//         if (hoursWorked < 6.0) {
+//           // Half day logic
+//           double missingHours = 8.0 - hoursWorked;
+//           calculatedSalary = (hoursWorked * hourlyRate); // Deduct salary
+//           differenceText =
+//               "Less: ${missingHours.floor()}h ${(missingHours.remainder(1) * 60).round()}m";
+//           shiftsCount = 1;
+//         } else if (hoursWorked >= 6.0 && hoursWorked <= 8.0) {
+//           calculatedSalary = dailySalary; // Full day pay
+//           differenceText =
+//               "Worked: ${hoursWorked.floor()}h ${(hoursWorked.remainder(1) * 60).round()}m";
+//           shiftsCount = 1;
+//         } else {
+//           // Overtime logic
+//           shiftsCount = (hoursWorked / 8).floor();
+//           calculatedSalary = shiftsCount * dailySalary;
+//           differenceText =
+//               "Extra: ${(hoursWorked - 8.0).floor()}h ${(hoursWorked - 8.0).remainder(1) * 60}m";
+//         }
+
+//         totalShifts += shiftsCount;
+//         calculatedMonthlySalary += calculatedSalary;
+
+//         shifts.add({
+//           "Punch In": punchInTime.toString(),
+//           "Punch Out": punchOutTime?.toString() ?? "N/A (Assumed Full Shift)",
+//           "Worked":
+//               "${hoursWorked.floor()}h ${(hoursWorked.remainder(1) * 60).round()}m",
+//           "Difference": differenceText,
+//           "Salary": "₹${calculatedSalary.toStringAsFixed(2)}",
+//         });
+//       }
+//     }
+
+//     // Show dialog box
+//     showDialog(
+//       context: context,
+//       builder: (_) => AlertDialog(
+//         title: Text("Shifts for ${employee.name}"),
+//         content: Container(
+//           width: double.maxFinite,
+//           child: ListView.builder(
+//             shrinkWrap: true,
+//             itemCount: shifts.length,
+//             itemBuilder: (context, index) {
+//               final shift = shifts[index];
+//               return ListTile(
+//                 title: Text("Shift ${index + 1}"),
+//                 subtitle: Text(
+//                   "Punch In: ${shift['Punch In']}\n"
+//                   "Punch Out: ${shift['Punch Out']}\n"
+//                   "Worked: ${shift['Worked']}\n"
+//                   "Difference: ${shift['Difference']}\n"
+//                   "Calculated Salary: ${shift['Salary']}",
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.pop(context),
+//             child: const Text("Close"),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Payroll Application'),
+//       ),
+//       body: isLoading
+//           ? const Center(child: CircularProgressIndicator())
+//           : ListView.builder(
+//               itemCount: employees.length,
+//               itemBuilder: (context, index) {
+//                 final employee = employees[index];
+
+//                 // Calculate total shifts, absent shifts, and salary
+//                 int totalShifts = logs
+//                     .where((log) =>
+//                         log.employeeCode == employee.employeeCode &&
+//                         log.employeeCode == employee.employeeCode &&
+//                         log.serialNumber == '' &&
+//                         log.punchDirection == "in")
+//                     .length;
+//                 int absentShifts = 30 - totalShifts; // Example assumption
+//                 double calculatedMonthlySalary =
+//                     totalShifts * (employee.monthlySalary / 30);
+
+//                 return ListTile(
+//                   title: Text(employee.name),
+//                   subtitle: Text(
+//                     "Total Shifts: $totalShifts\n"
+//                     "Absent Shifts: $absentShifts\n"
+//                     "Monthly Salary: ₹${employee.monthlySalary.toStringAsFixed(2)}\n"
+//                     "Calculated Salary: ₹${calculatedMonthlySalary.toStringAsFixed(2)}",
+//                   ),
+//                   onTap: () => showShiftsDialog(context, employee),
+//                 );
+//               },
+//             ),
 //     );
 //   }
 // }
