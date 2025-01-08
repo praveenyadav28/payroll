@@ -420,6 +420,45 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                         },
                                       ),
                                       IconButton(
+                                        icon: Icon(Icons.image,
+                                            color: AppColor.black),
+                                        onPressed: () {
+                                          showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: const Text('Images'),
+                                                  content: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      payment.imageUrls!.isEmpty
+                                                          ? Text(
+                                                              "No image uploded")
+                                                          : SizedBox(
+                                                              height:
+                                                                  Sizes.height *
+                                                                      .5,
+                                                              child: Image.network(
+                                                                  '${payment.imageUrls![0]}'),
+                                                            )
+                                                    ],
+                                                  ),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      child:
+                                                          const Text('Close'),
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              });
+                                        },
+                                      ),
+                                      IconButton(
                                         icon: Icon(Icons.delete,
                                             color: AppColor.red),
                                         onPressed: () {
@@ -483,14 +522,36 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
     );
   }
 
-  // Fetch payments from API
+// Fetch payments from API and include image URLs
   Future<List<PaymentModel>> fetchPayments() async {
     final response = await http.get(Uri.parse(
         "http://lms.muepetro.com/api/TransactionsPayroll/GetPaymentVoucherALLocationwisePayroll?datefrom=${fromDate.text}&dateto=${toDate.text}&locationid=${Preference.getString(PrefKeys.locationId)}&StaffId=0"));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
-      return data.map((item) => PaymentModel.fromJson(item)).toList();
+
+      // Convert the list of payments into a list of PaymentModel objects
+      List<PaymentModel> payments =
+          data.map((item) => PaymentModel.fromJson(item)).toList();
+
+      // Now, for each payment, fetch the corresponding images
+      for (var payment in payments) {
+        final pvNumber = payment.pvNo;
+
+        // Fetch image data for the current payment
+        var imageResponse = await ApiService.fetchData(
+          "CRM/GetImages?LocationId=${Preference.getString(PrefKeys.locationId)}&refno=$pvNumber&FormType=Payroll",
+        );
+
+        // Check if image data is available and update payment model
+        if (imageResponse != null && imageResponse.containsKey('imageUrls')) {
+          payment.imageUrls =
+              List<String>.from(imageResponse['imageUrls'] ?? []);
+        }
+      }
+
+      // Return the list of payments with image URLs
+      return payments;
     } else {
       throw Exception('Failed to load payments');
     }

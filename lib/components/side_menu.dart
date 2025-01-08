@@ -45,15 +45,13 @@ class SideMenu extends StatelessWidget {
             title: const Text("Masters"),
             leading: const Icon(Icons.difference_outlined),
             children: [
-              Preference.getString(PrefKeys.userType) == 'Staff'
-                  ? Container()
-                  : ListTile(
-                      leading: const Icon(Icons.business),
-                      title: const Text('Branches'),
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, '/branchView');
-                      },
-                    ),
+              ListTile(
+                leading: const Icon(Icons.business),
+                title: const Text('Branches'),
+                onTap: () {
+                  Navigator.pushReplacementNamed(context, '/branchView');
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.people),
                 title: const Text('Staff'),

@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, must_be_immutable
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:payroll/components/api.dart';
 import 'package:payroll/components/prefences.dart';
@@ -11,6 +13,7 @@ import 'package:payroll/utils/layout.dart';
 import 'package:payroll/utils/mediaquery.dart';
 import 'package:payroll/utils/snackbar.dart';
 import 'package:payroll/utils/textformfield.dart';
+import 'package:http/http.dart' as http;
 
 class PaymentScreen extends StatefulWidget {
   PaymentScreen(
@@ -44,6 +47,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String payableAmount = '';
   String monthlySalary = '';
   String dueBalance = '0';
+
+  List<XFile> _images = [];
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker _picker = ImagePicker();
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _images.add(image);
+        });
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -79,6 +97,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 },
                 icon: const Icon(Icons.arrow_back_ios)),
             centerTitle: true,
+            actions: [
+              _images.isEmpty
+                  ? ElevatedButton(
+                      onPressed: _pickImage,
+                      child: const Text('Pick Image'),
+                    )
+                  : Container(
+                      margin: EdgeInsets.all(5),
+                      padding: EdgeInsets.all(5),
+                      color: AppColor.black.withOpacity(.2),
+                      child: Image.file(File(_images[0].path))),
+              SizedBox(width: 10)
+            ],
             title:
                 const Text("Payment Voucher", overflow: TextOverflow.ellipsis)),
         body: OutsideContainer(
@@ -332,6 +363,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             "OtherNo5": 0,
           });
       if (response["result"] == true) {
+        uploadImages(_images);
         Navigator.pop(context, "For fatch data in last screen");
         showCustomSnackbarSuccess(context, response["message"]);
       } else {
@@ -352,6 +384,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
               'id': item['ledger_Id'],
               'name': item['ledger_Name'],
             }));
+  }
+
+  Future<void> uploadImages(List<XFile> images) async {
+    var url = Uri.parse(
+        'http://lms.muepetro.com/api/CRM/PostUploadImages?LocationId=${Preference.getString(PrefKeys.locationId)}&refno=${pvNoController.text}&FormType=Payroll');
+
+    var request = http.MultipartRequest('POST', url);
+
+    for (int i = 0; i < images.length; i++) {
+      var file = File(images[i].path);
+      var stream = http.ByteStream(file.openRead());
+      var length = await file.length();
+
+      var multipartFile = http.MultipartFile(
+        'Images', // Key for the images
+        stream,
+        length,
+        filename: 'image$i.jpg', // Filename with extension
+      );
+
+      request.files.add(multipartFile);
+    }
+
+    var response = await http.Response.fromStream(await request.send());
   }
 
 //Get Invoice Number

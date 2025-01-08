@@ -70,8 +70,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildInfoCard(
                       'Due Payments', '₹ $dueAmount', Icons.payment, Colors.red,
                       onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => DueScreen()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const DueScreen()));
                   }),
                   _buildInfoCard(
                       'Advance Payments',
@@ -81,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => AdvanceScreen()));
+                            builder: (context) => const AdvanceScreen()));
                   }),
                   _buildInfoCard('Departments', '${branchList.length}',
                       Icons.business, Colors.orange, onTap: () {

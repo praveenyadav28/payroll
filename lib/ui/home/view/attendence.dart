@@ -20,6 +20,10 @@ class Attendence extends StatefulWidget {
 }
 
 class _AttendenceState extends State<Attendence> {
+  TextEditingController fromDate = TextEditingController(
+      text: DateFormat('yyyy/MM/dd').format(DateTime.now()));
+  TextEditingController toDate = TextEditingController(
+      text: DateFormat('yyyy/MM/dd').format(DateTime.now()));
   TextEditingController yearController = TextEditingController();
 
   late ApiSalary apiService;
@@ -30,12 +34,44 @@ class _AttendenceState extends State<Attendence> {
   List<String> selectedPublicHolidays = [];
   String selectedMonth = 'January';
 
+  final Map<String, int> monthInt = {
+    'January': 1,
+    'February': 2,
+    'March': 3,
+    'April': 4,
+    'May': 5,
+    'June': 6,
+    'July': 7,
+    'August': 8,
+    'September': 9,
+    'October': 10,
+    'November': 11,
+    'December': 12,
+  };
+
   @override
   void initState() {
     super.initState();
     apiService = ApiSalary();
+
+    yearController.text = "${DateTime.now().year}";
+    fromDate.text =
+        "${yearController.text}/${selectedMonth == 'January' ? 1 : selectedMonth == 'February' ? 2 : selectedMonth == 'March' ? 3 : selectedMonth == 'April' ? 4 : selectedMonth == 'May' ? 5 : selectedMonth == 'June' ? 6 : selectedMonth == 'July' ? 7 : selectedMonth == 'August' ? 8 : selectedMonth == 'September' ? 9 : selectedMonth == 'October' ? 10 : selectedMonth == 'November' ? 11 : 12}/01";
+    toDate.text = Preference.getString(PrefKeys.calculationType) == '1'
+        ? toDate.text =
+            "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
+        : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
+
     yearController.text = "${DateTime.now().year}";
     fetchData();
+  }
+
+  int absentDaysCalculation(String fromDateText, String toDateText) {
+    DateTime fromTheDate = DateFormat("yyyy/MM/dd").parse(fromDateText);
+    DateTime toTheDate = DateFormat("yyyy/MM/dd").parse(toDateText);
+
+    Duration difference = toTheDate.difference(fromTheDate);
+    return difference.inDays;
   }
 
   final Map<String, int> monthDays = {
@@ -65,74 +101,32 @@ class _AttendenceState extends State<Attendence> {
           ? 29
           : monthDays[selectedMonth]!;
 
-      String fromDate =
-          '$year-${monthDays.keys.toList().indexOf(selectedMonth) + 1}-01';
-      String toDate =
-          '$year-${monthDays.keys.toList().indexOf(selectedMonth) + 1}-$daysInMonth';
+      List<DeviceLog> logs =
+          await apiService.fetchLogs(fromDate.text, toDate.text);
 
-      List<DeviceLog> logs = await apiService.fetchLogs(fromDate, toDate);
+      int absentDaysCalculate =
+          absentDaysCalculation(fromDate.text, toDate.text) +
+              absentDaysCalculation(fromDate.text, toDate.text) +
+              (Preference.getString(PrefKeys.calculationType) == '1' ? 0 : 1);
+
       WorkingShiftCalculator calculator1 = WorkingShiftCalculator();
       Map<String, dynamic> data1 = calculator1.calculate(
-        employees,
-        logs,
-        selectedPublicHolidays,
-        daysInMonth,
-        int.parse(yearController.text.toString()),
-        selectedMonth == 'January'
-            ? 1
-            : selectedMonth == 'February'
-                ? 2
-                : selectedMonth == 'March'
-                    ? 3
-                    : selectedMonth == 'April'
-                        ? 4
-                        : selectedMonth == 'May'
-                            ? 5
-                            : selectedMonth == 'June'
-                                ? 6
-                                : selectedMonth == 'July'
-                                    ? 7
-                                    : selectedMonth == 'August'
-                                        ? 8
-                                        : selectedMonth == 'September'
-                                            ? 9
-                                            : selectedMonth == 'October'
-                                                ? 10
-                                                : selectedMonth == 'November'
-                                                    ? 11
-                                                    : 12,
-      );
+          employees,
+          logs,
+          selectedPublicHolidays,
+          daysInMonth,
+          int.parse(yearController.text.toString()),
+          monthInt[selectedMonth]!,
+          absentDaysCalculate);
       WorkingHoursCalculator calculator0 = WorkingHoursCalculator();
       Map<String, dynamic> data0 = calculator0.calculate(
-        employees,
-        logs,
-        selectedPublicHolidays,
-        daysInMonth,
-        int.parse(yearController.text.toString()),
-        selectedMonth == 'January'
-            ? 1
-            : selectedMonth == 'February'
-                ? 2
-                : selectedMonth == 'March'
-                    ? 3
-                    : selectedMonth == 'April'
-                        ? 4
-                        : selectedMonth == 'May'
-                            ? 5
-                            : selectedMonth == 'June'
-                                ? 6
-                                : selectedMonth == 'July'
-                                    ? 7
-                                    : selectedMonth == 'August'
-                                        ? 8
-                                        : selectedMonth == 'September'
-                                            ? 9
-                                            : selectedMonth == 'October'
-                                                ? 10
-                                                : selectedMonth == 'November'
-                                                    ? 11
-                                                    : 12,
-      );
+          employees,
+          logs,
+          selectedPublicHolidays,
+          daysInMonth,
+          int.parse(yearController.text.toString()),
+          monthInt[selectedMonth]!,
+          absentDaysCalculate);
 
       setState(() {
         workingHoursData = Preference.getString(PrefKeys.calculationType) == '1'
@@ -277,11 +271,9 @@ class _AttendenceState extends State<Attendence> {
                 Expanded(
                     flex: 1,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(
-                            height: Sizes.height * .25,
-                            child: Image.asset('assets/images/payment.jpg')),
                         Row(
                           children: [
                             Expanded(
@@ -309,9 +301,99 @@ class _AttendenceState extends State<Attendence> {
                                     onChanged: (value) {
                                       setState(() {
                                         selectedMonth = value!;
+                                        fromDate.text =
+                                            "${yearController.text}/${selectedMonth == 'January' ? 1 : selectedMonth == 'February' ? 2 : selectedMonth == 'March' ? 3 : selectedMonth == 'April' ? 4 : selectedMonth == 'May' ? 5 : selectedMonth == 'June' ? 6 : selectedMonth == 'July' ? 7 : selectedMonth == 'August' ? 8 : selectedMonth == 'September' ? 9 : selectedMonth == 'October' ? 10 : selectedMonth == 'November' ? 11 : 12}/01";
+                                        toDate.text = Preference.getString(
+                                                    PrefKeys.calculationType) ==
+                                                '1'
+                                            ? toDate.text =
+                                                "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
+                                            : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
                                       });
                                     },
                                   )),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: Sizes.height * 0.02),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: dropdownTextfield(
+                                context,
+                                "From Date",
+                                InkWell(
+                                  onTap: () async {
+                                    FocusScope.of(context)
+                                        .requestFocus(FocusNode());
+                                    await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(1900),
+                                      lastDate: DateTime(2500),
+                                    ).then((selectedDate) {
+                                      if (selectedDate != null) {
+                                        fromDate.text = DateFormat('yyyy/MM/dd')
+                                            .format(selectedDate);
+                                      }
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        fromDate.text,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColor.black),
+                                      ),
+                                      Icon(Icons.edit_calendar,
+                                          color: AppColor.black)
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: dropdownTextfield(
+                                context,
+                                "To Date",
+                                InkWell(
+                                  onTap: () async {
+                                    FocusScope.of(context)
+                                        .requestFocus(FocusNode());
+                                    await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(1900),
+                                      lastDate: DateTime(2500),
+                                    ).then((selectedDate) {
+                                      if (selectedDate != null) {
+                                        toDate.text = DateFormat('yyyy/MM/dd')
+                                            .format(selectedDate);
+                                      }
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        toDate.text,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColor.black),
+                                      ),
+                                      Icon(Icons.edit_calendar,
+                                          color: AppColor.black)
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -655,7 +737,7 @@ class _AttendenceState extends State<Attendence> {
   }
 
   void showShiftLog(
-    List<Map<String, String>> dailyPunchLogInfo,
+    List<Map<String, dynamic>> dailyPunchLogInfo,
   ) {
     showDialog(
       context: context,
@@ -671,6 +753,7 @@ class _AttendenceState extends State<Attendence> {
                 ...List.generate(
                   dailyPunchLogInfo.length,
                   (index) {
+                    var punchTimeList = dailyPunchLogInfo[index]['Punch Time'];
                     return Stack(
                       alignment: Alignment.topRight,
                       children: [
@@ -709,12 +792,10 @@ class _AttendenceState extends State<Attendence> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      '${dailyPunchLogInfo[index]['Punch In']}'
-                                          .substring(
-                                              0,
-                                              '${dailyPunchLogInfo[index]['Punch In']}'
-                                                      .length -
-                                                  13),
+                                      DateFormat("yyyy-MM-dd").format(DateFormat(
+                                              "yyyy-MM-dd HH:mm:ss")
+                                          .parse(
+                                              "${dailyPunchLogInfo[index]['Punch In']}")),
                                       textAlign: TextAlign.start,
                                       style: const TextStyle(
                                           fontSize: 18,
@@ -741,12 +822,41 @@ class _AttendenceState extends State<Attendence> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Punch In: ${'${dailyPunchLogInfo[index]['Punch In']}'.substring(11, '${dailyPunchLogInfo[index]['Punch In']}'.length - 7)}",
+                                          "Punch In : ${DateFormat("HH:mm").format(DateFormat("yyyy-MM-dd HH:mm:ss").parse("${dailyPunchLogInfo[index]['Punch In']}"))}",
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         ),
+                                        Wrap(
+                                            direction: Axis.horizontal,
+                                            children: List.generate(
+                                                punchTimeList.length, (i) {
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                    color: AppColor.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5)),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 3,
+                                                        horizontal: 4),
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4,
+                                                        horizontal: 5),
+                                                child: Text(
+                                                  DateFormat("HH:mm").format(DateFormat(
+                                                          "yyyy-MM-dd HH:mm:ss")
+                                                      .parse(
+                                                          "${punchTimeList![i]}")),
+                                                ),
+                                              );
+                                            })),
                                         Text(
-                                          "Punch Out: ${'${dailyPunchLogInfo[index]['Punch Out']}'.substring(11, '${dailyPunchLogInfo[index]['Punch Out']}'.length - 7)}",
+                                          dailyPunchLogInfo[index]['Punch Out']!
+                                                  .contains('N/A')
+                                              ? ""
+                                              : "Punch Out : ${DateFormat("HH:mm").format(DateFormat("yyyy-MM-dd HH:mm:ss").parse("${dailyPunchLogInfo[index]['Punch Out']}"))}",
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         ),
@@ -760,11 +870,18 @@ class _AttendenceState extends State<Attendence> {
                                           CrossAxisAlignment.center,
                                       children: [
                                         Text(
-                                          '${dailyPunchLogInfo[index]['Worked']}',
+                                          '${dailyPunchLogInfo[index]['Punch Out']}'
+                                                  .contains('Full')
+                                              ? "Unknown"
+                                              : '${dailyPunchLogInfo[index]['Worked']}',
                                           style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w500,
-                                              color: AppColor.black),
+                                              color:
+                                                  '${dailyPunchLogInfo[index]['Punch Out']}'
+                                                          .contains('Full')
+                                                      ? AppColor.red
+                                                      : AppColor.black),
                                         ),
                                         Text(
                                           '${dailyPunchLogInfo[index]['Difference']}'
@@ -779,6 +896,8 @@ class _AttendenceState extends State<Attendence> {
                                                       ? AppColor.red
                                                       : AppColor.black),
                                         ),
+                                        Text(
+                                            '${dailyPunchLogInfo[index]['Salary']}')
                                       ],
                                     ),
                                   )

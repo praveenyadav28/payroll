@@ -482,7 +482,7 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
           "DistanceKm": "",
           "DiscountSource": "0",
           "DiscountValid": "Dr",
-          "Location_Id": Preference.getString(PrefKeys.locationId),
+          "Location_Id": int.parse(Preference.getString(PrefKeys.locationId)),
           "OtherNumber1": 1,
           "OtherNumber2": 2,
           "OtherNumber3": 3,
