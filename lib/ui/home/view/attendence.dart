@@ -545,7 +545,8 @@ class _AttendenceState extends State<Attendence> {
                                         : showActivityLog(
                                             employeeData['dailyPunchLogInfo'],
                                             employeeData[
-                                                'employeeWorkingHours']);
+                                                'employeeWorkingHours'],
+                                            employeeData['dailySalary']);
                                   },
                                 )),
                           ]);
@@ -559,8 +560,8 @@ class _AttendenceState extends State<Attendence> {
     );
   }
 
-  void showActivityLog(
-      Map<String, List<DeviceLog>> dailyPunchLogInfo, double workingHours) {
+  void showActivityLog(Map<String, List<DeviceLog>> dailyPunchLogInfo,
+      double workingHours, double dailySalary) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -576,36 +577,51 @@ class _AttendenceState extends State<Attendence> {
                   dailyPunchLogInfo.keys.length,
                   (index) {
                     String date = dailyPunchLogInfo.keys.elementAt(index);
-                    List<DeviceLog> logs = dailyPunchLogInfo[date] ?? [];
-
+                    List<DeviceLog> logsForDay = dailyPunchLogInfo[date] ?? [];
+                    List<DeviceLog> validLogsForDay = logsForDay
+                        .where((log) =>
+                            log.punchDirection == 'in' ||
+                            log.punchDirection == 'out')
+                        .toList();
+                    List<DeviceLog> unvalidLogsForDay = logsForDay
+                        .where((log) => log.punchDirection == ' ')
+                        .toList();
                     // Initialize variables
                     String workingHoursDiff = "No data";
                     String workingHoursStatusFormatted = "No data";
-
-                    if (logs.isNotEmpty) {
-                      if (logs.length == 1) {
-                        // Single punch log case
+                    double totalWorkedHours = 0.0;
+                    double salaryCalculated = 0.0;
+                    if (validLogsForDay.isNotEmpty) {
+                      if (validLogsForDay.length % 2 != 0) {
+                        // Odd number of logs, so working hours are 0
                         workingHoursDiff = "Unknown";
                         workingHoursStatusFormatted = "0:0";
                       } else {
-                        // Calculate total working duration
-                        DateTime firstPunch = logs.first.punchTime;
-                        DateTime lastPunch = logs.last.punchTime;
-                        Duration duration = lastPunch.difference(firstPunch);
+                        // Even number of logs, calculate total working duration by pairs
 
+                        for (int i = 0; i < validLogsForDay.length; i += 2) {
+                          Duration pairDuration = validLogsForDay[i + 1]
+                              .punchTime
+                              .difference(validLogsForDay[i].punchTime);
+                          totalWorkedHours += pairDuration.inHours +
+                              (pairDuration.inMinutes % 60) / 60.0;
+                        }
+                        salaryCalculated = totalWorkedHours >= workingHours
+                            ? dailySalary * workingHours
+                            : totalWorkedHours * dailySalary;
                         // Total hours and minutes worked
-                        int hoursWorked = duration.inHours;
-                        int minutesWorked = duration.inMinutes % 60;
+                        int totalHoursWorked = totalWorkedHours.floor();
+                        int totalMinutesWorked =
+                            ((totalWorkedHours - totalHoursWorked) * 60)
+                                .round();
 
                         // Format working hours
                         workingHoursDiff =
-                            "$hoursWorked hours $minutesWorked minutes";
+                            "$totalHoursWorked hours $totalMinutesWorked minutes";
 
                         // Calculate status difference
-                        double actualWorkedHours =
-                            hoursWorked + minutesWorked / 60.0;
                         double statusDifference =
-                            actualWorkedHours - workingHours;
+                            totalWorkedHours - workingHours;
 
                         // Handle negative and positive status differences
                         bool isNegative = statusDifference < 0;
@@ -644,54 +660,115 @@ class _AttendenceState extends State<Attendence> {
                           ? double.infinity
                           : Sizes.width < 1100 && Sizes.width > 700
                               ? Sizes.width * 0.38
-                              : Sizes.width * 0.26,
+                              : Sizes.width * 0.285,
                       child: Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  date,
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  'Working Hours',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: AppColor.black.withOpacity(.7),
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
+                          Text(
+                            date,
+                            textAlign: TextAlign.start,
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w500),
                           ),
+                          const Divider(),
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    ...logs.map((log) {
+                                    const Text('Punch In',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    const Divider(),
+                                    ...validLogsForDay
+                                        .where(
+                                            (log) => log.punchDirection == 'in')
+                                        .map((log) {
                                       return Text(
-                                        'Punch Time: ${log.punchTime.hour}:${log.punchTime.minute}',
+                                        '${log.punchTime.hour}:${log.punchTime.minute}',
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w600),
                                       );
                                     }).toList(),
-                                    const SizedBox(height: 5),
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 5),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
+                                    const Text('Punch Out',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    const Divider(),
+                                    ...validLogsForDay
+                                        .where((log) =>
+                                            log.punchDirection == 'out')
+                                        .map((log) {
+                                      return Text(
+                                        '${log.punchTime.hour}:${log.punchTime.minute}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    const Text('Break In/Out',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    const Divider(),
+                                    Wrap(direction: Axis.horizontal, children: [
+                                      ...unvalidLogsForDay
+                                          .where((log) =>
+                                              log.punchDirection == ' ')
+                                          .map(
+                                        (log) {
+                                          return Container(
+                                              decoration: BoxDecoration(
+                                                  color: AppColor.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(5)),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 3,
+                                                      horizontal: 4),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 4,
+                                                      horizontal: 5),
+                                              child: Text(
+                                                  '${log.punchTime.hour}:${log.punchTime.minute}'));
+                                        },
+                                      ),
+                                    ]),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Working Hours',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          color: AppColor.black.withOpacity(.7),
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 7),
                                     Text(
                                       workingHoursDiff,
                                       style: TextStyle(
@@ -701,8 +778,21 @@ class _AttendenceState extends State<Attendence> {
                                               ? AppColor.red
                                               : AppColor.black),
                                     ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  children: [
                                     Text(
-                                      workingHoursStatusFormatted,
+                                      workingHoursStatusFormatted
+                                              .contains("0:0")
+                                          ? ""
+                                          : workingHoursStatusFormatted
+                                                  .contains("-")
+                                              ? "Less $workingHoursStatusFormatted"
+                                              : 'More - $workingHoursStatusFormatted',
                                       style: TextStyle(
                                           fontSize: 13,
                                           color: workingHoursStatusFormatted
@@ -710,9 +800,16 @@ class _AttendenceState extends State<Attendence> {
                                               ? AppColor.red
                                               : AppColor.black),
                                     ),
+                                    Text(
+                                      salaryCalculated.toStringAsFixed(2),
+                                      textAlign: TextAlign.start,
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500),
+                                    ),
                                   ],
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         ],

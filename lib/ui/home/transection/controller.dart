@@ -165,20 +165,31 @@ class WorkingHoursCalculator {
           continue;
         }
 
+        // Get all logs for the current date (including punch direction ' ')
         List<DeviceLog> logsForDay = groupedLogs[currentDate] ?? [];
-        if (logsForDay.isNotEmpty) {
-          punchDays.add(currentDate);
-          if (logsForDay.length == 1) {
+
+        // Filter logs for working hours calculation (exclude direction ' ')
+        List<DeviceLog> validLogsForDay = logsForDay
+            .where((log) =>
+                log.punchDirection == 'in' || log.punchDirection == 'out')
+            .toList();
+
+        punchDays.add(currentDate);
+
+        if (validLogsForDay.isNotEmpty) {
+          if (validLogsForDay.length == 1) {
             // Single log counts as 0 working hours
             totalHoursWorked += 0;
             workingDays++;
           } else {
             double hoursWorked = 0.0;
-            if (logsForDay.length % 2 == 0) {
-              for (int i = 0; i < logsForDay.length; i += 2) {
-                Duration pairDuration = logsForDay[i + 1]
+
+            // Only consider logs with even pairs
+            if (validLogsForDay.length % 2 == 0) {
+              for (int i = 0; i < validLogsForDay.length; i += 2) {
+                Duration pairDuration = validLogsForDay[i + 1]
                     .punchTime
-                    .difference(logsForDay[i].punchTime);
+                    .difference(validLogsForDay[i].punchTime);
                 hoursWorked +=
                     pairDuration.inHours + (pairDuration.inMinutes % 60) / 60.0;
               }
@@ -192,7 +203,7 @@ class WorkingHoursCalculator {
                   0.0; // Odd number of logs results in 0 working hours
             }
 
-// Add the calculated hours to total hours worked and increment working days
+            // Add the calculated hours to total hours worked and increment working days
             totalHoursWorked += hoursWorked;
             workingDays++;
           }
@@ -219,6 +230,7 @@ class WorkingHoursCalculator {
         'monthlySalary': employee.monthlySalary,
         'dueSalary': totalSalary,
         'dailyPunchLogInfo': groupedLogs,
+        'dailySalary': dailySalary
       };
     }
 

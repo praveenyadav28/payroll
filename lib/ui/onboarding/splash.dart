@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:payroll/components/prefences.dart';
 import 'package:payroll/utils/container.dart';
 import 'package:payroll/utils/mediaquery.dart';
 
