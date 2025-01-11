@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, must_be_immutable
+// ignore_for_file: use_build_context_synchronously, must_be_immutable, unused_local_variable
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -104,11 +104,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       child: const Text('Pick Image'),
                     )
                   : Container(
-                      margin: EdgeInsets.all(5),
-                      padding: EdgeInsets.all(5),
+                      margin: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(5),
                       color: AppColor.black.withOpacity(.2),
                       child: Image.file(File(_images[0].path))),
-              SizedBox(width: 10)
+              const SizedBox(width: 10)
             ],
             title:
                 const Text("Payment Voucher", overflow: TextOverflow.ellipsis)),

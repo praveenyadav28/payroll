@@ -584,8 +584,20 @@ class _AttendenceState extends State<Attendence> {
                             log.punchDirection == 'out')
                         .toList();
                     List<DeviceLog> unvalidLogsForDay = logsForDay
-                        .where((log) => log.punchDirection == ' ')
+                        .where((log) =>
+                            log.punchDirection == ' ' ||
+                            log.punchDirection == '')
                         .toList();
+
+                    List<DeviceLog> oddList = [];
+                    List<DeviceLog> evenList = [];
+                    for (int i = 0; i < validLogsForDay.length; i++) {
+                      if (i % 2 == 0) {
+                        oddList.add(validLogsForDay[i]); // Even index
+                      } else {
+                        evenList.add(validLogsForDay[i]); // Odd index
+                      }
+                    }
                     // Initialize variables
                     String workingHoursDiff = "No data";
                     String workingHoursStatusFormatted = "No data";
@@ -681,9 +693,9 @@ class _AttendenceState extends State<Attendence> {
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600)),
                                     const Divider(),
-                                    ...validLogsForDay
-                                        .where(
-                                            (log) => log.punchDirection == 'in')
+                                    ...oddList
+                                        .where((log) =>
+                                            log.punchDirection.isNotEmpty)
                                         .map((log) {
                                       return Text(
                                         '${log.punchTime.hour}:${log.punchTime.minute}',
@@ -702,9 +714,9 @@ class _AttendenceState extends State<Attendence> {
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600)),
                                     const Divider(),
-                                    ...validLogsForDay
+                                    ...evenList
                                         .where((log) =>
-                                            log.punchDirection == 'out')
+                                            log.punchDirection.isNotEmpty)
                                         .map((log) {
                                       return Text(
                                         '${log.punchTime.hour}:${log.punchTime.minute}',
@@ -726,7 +738,7 @@ class _AttendenceState extends State<Attendence> {
                                     Wrap(direction: Axis.horizontal, children: [
                                       ...unvalidLogsForDay
                                           .where((log) =>
-                                              log.punchDirection == ' ')
+                                              log.punchDirection.trim().isEmpty)
                                           .map(
                                         (log) {
                                           return Container(
@@ -850,7 +862,19 @@ class _AttendenceState extends State<Attendence> {
                 ...List.generate(
                   dailyPunchLogInfo.length,
                   (index) {
-                    var punchTimeList = dailyPunchLogInfo[index]['Punch Time'];
+                    List<DeviceLog> logsForDay =
+                        dailyPunchLogInfo[index]['PunchTime'];
+                    String date =
+                        DateFormat('dd-MM-yyyy').format(logsForDay[0].logDate);
+                    List<DeviceLog> validLogsForDay = logsForDay
+                        .where((log) =>
+                            log.punchDirection == 'in' ||
+                            log.punchDirection == 'out')
+                        .toList();
+                    List<DeviceLog> unvalidLogsForDay = logsForDay
+                        .where((log) => log.punchDirection.trim().isEmpty)
+                        .toList();
+
                     return Stack(
                       alignment: Alignment.topRight,
                       children: [
@@ -865,11 +889,11 @@ class _AttendenceState extends State<Attendence> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                "${dailyPunchLogInfo[index]['Difference']}"
+                                "${dailyPunchLogInfo[index]['differenceText']}"
                                         .contains("Less")
                                     ? AppColor.red.withOpacity(.1)
                                     : const Color(0xff4EB1C6).withOpacity(.4),
-                                "${dailyPunchLogInfo[index]['Difference']}"
+                                "${dailyPunchLogInfo[index]['differenceText']}"
                                         .contains("Less")
                                     ? AppColor.red.withOpacity(.2)
                                     : const Color(0xff56C891).withOpacity(.4)
@@ -881,127 +905,176 @@ class _AttendenceState extends State<Attendence> {
                               : Sizes.width < 1100 && Sizes.width > 700
                                   ? Sizes.width * 0.38
                                   : Sizes.width * 0.26,
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      DateFormat("yyyy-MM-dd").format(DateFormat(
-                                              "yyyy-MM-dd HH:mm:ss")
-                                          .parse(
-                                              "${dailyPunchLogInfo[index]['Punch In']}")),
-                                      textAlign: TextAlign.start,
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      'Working Hours',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          color: AppColor.black.withOpacity(.7),
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Punch In : ${DateFormat("HH:mm").format(DateFormat("yyyy-MM-dd HH:mm:ss").parse("${dailyPunchLogInfo[index]['Punch In']}"))}",
+                          child: Column(children: [
+                            Text(
+                              date,
+                              textAlign: TextAlign.start,
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w500),
+                            ),
+                            const Divider(),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      const Text('Punch In',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600)),
+                                      const Divider(),
+                                      ...validLogsForDay
+                                          .where((log) =>
+                                              log.punchDirection.isNotEmpty)
+                                          .map((log) {
+                                        return Text(
+                                          log.punchDirection == 'out'
+                                              ? '-'
+                                              : '${log.punchTime.hour}:${log.punchTime.minute}',
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
-                                        ),
-                                        Wrap(
-                                            direction: Axis.horizontal,
-                                            children: List.generate(
-                                                punchTimeList.length, (i) {
-                                              return Container(
-                                                decoration: BoxDecoration(
-                                                    color: AppColor.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5)),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                                        );
+                                      }).toList(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      const Text('Punch Out',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600)),
+                                      const Divider(),
+                                      ...validLogsForDay
+                                          .where((log) =>
+                                              log.punchDirection.isNotEmpty)
+                                          .map((log) {
+                                        return Text(
+                                          log.punchDirection == 'in'
+                                              ? '-'
+                                              : '${log.punchTime.hour}:${log.punchTime.minute}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600),
+                                        );
+                                      }).toList(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      const Text('Break In/Out',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600)),
+                                      const Divider(),
+                                      Wrap(
+                                          direction: Axis.horizontal,
+                                          children: [
+                                            ...unvalidLogsForDay
+                                                .where((log) => log
+                                                    .punchDirection
+                                                    .trim()
+                                                    .isEmpty)
+                                                .map(
+                                              (log) {
+                                                return Container(
+                                                    decoration: BoxDecoration(
+                                                        color: AppColor.white,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         vertical: 3,
                                                         horizontal: 4),
-                                                margin:
-                                                    const EdgeInsets.symmetric(
+                                                    margin: const EdgeInsets
+                                                        .symmetric(
                                                         vertical: 4,
                                                         horizontal: 5),
-                                                child: Text(
-                                                  DateFormat("HH:mm").format(DateFormat(
-                                                          "yyyy-MM-dd HH:mm:ss")
-                                                      .parse(
-                                                          "${punchTimeList![i]}")),
-                                                ),
-                                              );
-                                            })),
-                                        Text(
-                                          dailyPunchLogInfo[index]['Punch Out']!
-                                                  .contains('N/A')
-                                              ? ""
-                                              : "Punch Out : ${DateFormat("HH:mm").format(DateFormat("yyyy-MM-dd HH:mm:ss").parse("${dailyPunchLogInfo[index]['Punch Out']}"))}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600),
-                                        ),
-                                        const SizedBox(height: 5),
-                                      ],
-                                    ),
+                                                    child: Text(
+                                                        '${log.punchTime.hour}:${log.punchTime.minute}'));
+                                              },
+                                            ),
+                                          ]),
+                                    ],
                                   ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${dailyPunchLogInfo[index]['Punch Out']}'
-                                                  .contains('Full')
-                                              ? "Unknown"
-                                              : '${dailyPunchLogInfo[index]['Worked']}',
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color:
-                                                  '${dailyPunchLogInfo[index]['Punch Out']}'
-                                                          .contains('Full')
-                                                      ? AppColor.red
-                                                      : AppColor.black),
-                                        ),
-                                        Text(
-                                          '${dailyPunchLogInfo[index]['Difference']}'
-                                                  .contains("Worked")
-                                              ? ''
-                                              : '${dailyPunchLogInfo[index]['Difference']}',
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color:
-                                                  '${dailyPunchLogInfo[index]['Difference']}'
-                                                          .contains("Less")
-                                                      ? AppColor.red
-                                                      : AppColor.black),
-                                        ),
-                                        Text(
-                                            '${dailyPunchLogInfo[index]['Salary']}')
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ],
-                          ),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Working Hours',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color:
+                                                AppColor.black.withOpacity(.7),
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                      const SizedBox(height: 7),
+                                      Text(
+                                        validLogsForDay.length % 2 != 0 ||
+                                                dailyPunchLogInfo[index]
+                                                        ['workinghours'] ==
+                                                    0.0
+                                            ? "Unknown"
+                                            : "${dailyPunchLogInfo[index]['workinghours'].floor()}hours ${(dailyPunchLogInfo[index]['workinghours'].remainder(1) * 60).round()}minutes",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: validLogsForDay.length % 2 !=
+                                                        0 ||
+                                                    dailyPunchLogInfo[index]
+                                                            ['workinghours'] ==
+                                                        0.0
+                                                ? AppColor.red
+                                                : AppColor.black),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        validLogsForDay.length % 2 != 0 ||
+                                                dailyPunchLogInfo[index]
+                                                        ['workinghours'] ==
+                                                    0.0
+                                            ? ""
+                                            : '${dailyPunchLogInfo[index]['differenceText']}',
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: dailyPunchLogInfo[index]
+                                                        ['differenceText']
+                                                    .contains("Less")
+                                                ? AppColor.red
+                                                : AppColor.black),
+                                      ),
+                                      Text(
+                                        dailyPunchLogInfo[index]['Salary'],
+                                        textAlign: TextAlign.start,
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ]),
                         ),
                         "${dailyPunchLogInfo[index]['Difference']}"
                                 .contains("Double")
