@@ -734,3 +734,54 @@ class MyApp extends StatelessWidget {
 //     );
 //   }
 // }
+
+// import 'package:flutter/material.dart';
+
+class ClockScreen extends StatefulWidget {
+  const ClockScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ClockScreen> createState() => _ClockScreenState();
+}
+
+class _ClockScreenState extends State<ClockScreen> {
+  TimeOfDay? _selectedTime;
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime != null && pickedTime != _selectedTime) {
+      setState(() {
+        _selectedTime = pickedTime;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Time'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: _selectTime,
+              child: const Text('Select Time'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _selectedTime?.format(context) ?? 'No time selected',
+              style: Theme.of(context).textTheme.headline6,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

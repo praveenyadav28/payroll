@@ -9,6 +9,7 @@ import 'package:payroll/components/prefences.dart';
 import 'package:payroll/components/side_menu.dart';
 import 'package:payroll/model/payment_model.dart';
 import 'package:payroll/ui/home/transection/payment.dart';
+import 'package:payroll/ui/home/view/payment_excel.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
 import 'package:payroll/utils/container.dart';
@@ -72,7 +73,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
       _filteredPayments = payments;
 
       totalAmount = _filteredPayments.fold(
-          0, (sum, payment) => sum + double.parse(payment.cashAmount!));
+          0, (sum, payment) => sum + double.parse(payment.cashAmount ?? "0"));
       _streamController.add(payments); // Add data to the stream
     } catch (error) {
       _streamController.addError(error); // Add error to the stream
@@ -93,6 +94,15 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
         title: const Text('Payment View'),
         flexibleSpace: const OutsideContainer(child: Column()),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.file_download_outlined, color: AppColor.white),
+            onPressed: () async {
+              createExcelPayment(_filteredPayments);
+            },
+          ),
+          SizedBox(width: 15)
+        ],
       ),
       drawer: const SideMenu(),
       body: SingleChildScrollView(
@@ -433,7 +443,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                                         MainAxisSize.min,
                                                     children: [
                                                       payment.imageUrls!.isEmpty
-                                                          ? Text(
+                                                          ? const Text(
                                                               "No image uploded")
                                                           : SizedBox(
                                                               height:

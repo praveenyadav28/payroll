@@ -1,4 +1,9 @@
 // screens/salary_screen.dart
+import 'dart:io';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:payroll/components/prefences.dart';
@@ -20,11 +25,12 @@ class Attendence extends StatefulWidget {
 }
 
 class _AttendenceState extends State<Attendence> {
+  TextEditingController yearController = TextEditingController();
   TextEditingController fromDate = TextEditingController(
       text: DateFormat('yyyy/MM/dd').format(DateTime.now()));
   TextEditingController toDate = TextEditingController(
       text: DateFormat('yyyy/MM/dd').format(DateTime.now()));
-  TextEditingController yearController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
 
   late ApiSalary apiService;
   Map<String, dynamic>? workingHoursData;
@@ -34,35 +40,17 @@ class _AttendenceState extends State<Attendence> {
   List<String> selectedPublicHolidays = [];
   String selectedMonth = 'January';
 
-  final Map<String, int> monthInt = {
-    'January': 1,
-    'February': 2,
-    'March': 3,
-    'April': 4,
-    'May': 5,
-    'June': 6,
-    'July': 7,
-    'August': 8,
-    'September': 9,
-    'October': 10,
-    'November': 11,
-    'December': 12,
-  };
-
   @override
   void initState() {
     super.initState();
     apiService = ApiSalary();
-
     yearController.text = "${DateTime.now().year}";
-    fromDate.text =
-        "${yearController.text}/${selectedMonth == 'January' ? 1 : selectedMonth == 'February' ? 2 : selectedMonth == 'March' ? 3 : selectedMonth == 'April' ? 4 : selectedMonth == 'May' ? 5 : selectedMonth == 'June' ? 6 : selectedMonth == 'July' ? 7 : selectedMonth == 'August' ? 8 : selectedMonth == 'September' ? 9 : selectedMonth == 'October' ? 10 : selectedMonth == 'November' ? 11 : 12}/01";
+    fromDate.text = "${yearController.text}/${monthInt[selectedMonth]!}/01";
     toDate.text = Preference.getString(PrefKeys.calculationType) == '1'
         ? toDate.text =
             "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
         : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
 
-    yearController.text = "${DateTime.now().year}";
     fetchData();
   }
 
@@ -89,6 +77,21 @@ class _AttendenceState extends State<Attendence> {
     'December': 31,
   };
 
+  final Map<String, int> monthInt = {
+    'January': 1,
+    'February': 2,
+    'March': 3,
+    'April': 4,
+    'May': 5,
+    'June': 6,
+    'July': 7,
+    'August': 8,
+    'September': 9,
+    'October': 10,
+    'November': 11,
+    'December': 12,
+  };
+
   bool isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
   }
@@ -103,12 +106,9 @@ class _AttendenceState extends State<Attendence> {
 
       List<DeviceLog> logs =
           await apiService.fetchLogs(fromDate.text, toDate.text);
-
       int absentDaysCalculate =
           absentDaysCalculation(fromDate.text, toDate.text) +
-              absentDaysCalculation(fromDate.text, toDate.text) +
               (Preference.getString(PrefKeys.calculationType) == '1' ? 0 : 1);
-
       WorkingShiftCalculator calculator1 = WorkingShiftCalculator();
       Map<String, dynamic> data1 = calculator1.calculate(
           employees,
@@ -429,14 +429,26 @@ class _AttendenceState extends State<Attendence> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [Color(0xff4EB1C6), Color(0xff56C891)])),
-                    child: Center(
-                        child: Text(
-                      "Staff List",
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: AppColor.black,
-                          fontWeight: FontWeight.bold),
-                    )),
+                    child: Stack(
+                      alignment: Alignment.centerRight,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.file_download_outlined,
+                              color: AppColor.white),
+                          onPressed: () async {
+                            await generatePDF();
+                          },
+                        ),
+                        Center(
+                            child: Text(
+                          "Staff List",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold),
+                        )),
+                      ],
+                    ),
                   ),
             workingHoursData == null
                 ? Container()
@@ -1102,5 +1114,78 @@ class _AttendenceState extends State<Attendence> {
         );
       },
     );
+  }
+
+  Future<void> generatePDF() async {
+    final pdf = pw.Document();
+
+    // Define page size and orientation
+    const pageFormat = PdfPageFormat.a4;
+
+    // Define table headers
+    final List<String> headers = [
+      'Name',
+      'Biomax Id',
+      'Staff Working Hours',
+      Preference.getString(PrefKeys.calculationType) == '1'
+          ? 'Working Shift'
+          : "Working Days",
+      Preference.getString(PrefKeys.calculationType) == '1'
+          ? 'Absent Shift'
+          : 'Absent Days',
+    ];
+
+    // Create a list to store table rows
+    final List<List<String>> tableRows = [];
+
+    for (var index = 0; index < workingHoursData!.length; index++) {
+      String employeeCode = workingHoursData!.keys.elementAt(index);
+      var employeeData = workingHoursData![employeeCode];
+      final List<String> rowData = [
+        employeeData['name'],
+        employeeData['employeeCode'],
+        "${employeeData['employeeWorkingHours']}",
+        "${employeeData['workingDays']}",
+        "${employeeData['absentDays']}",
+      ];
+
+      // Add rowData to tableRows
+      tableRows.add(rowData);
+    }
+
+    // Add the table to the PDF document
+    pdf.addPage(
+      pw.Page(
+          pageFormat: pageFormat,
+          margin: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          build: (context) => pw.Column(children: [
+                pw.Text("Staff Attendence",
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(
+                  height: 10,
+                ),
+                pw.Table.fromTextArray(
+                  headers: headers,
+                  data: tableRows,
+                  cellAlignment: pw.Alignment.center,
+                  border: pw.TableBorder.all(),
+                  headerDecoration: const pw.BoxDecoration(
+                    color: PdfColors.grey300,
+                  ),
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  cellStyle: const pw.TextStyle(),
+                  cellPadding: const pw.EdgeInsets.all(5),
+                ),
+              ])),
+    );
+
+    // Save the PDF to the device
+    // ignore: unused_local_variable
+    final output = await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+    );
+
+    final file = File('example.pdf');
+    await file.writeAsBytes(await pdf.save());
   }
 }

@@ -43,6 +43,35 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
     });
   }
 
+  String _convertedTime = '';
+
+  void _convertDoubleToTime(String hours) {
+    String input = hours;
+    if (input.isEmpty) {
+      setState(() {
+        _convertedTime = '';
+      });
+      return;
+    }
+
+    try {
+      double inputDouble = double.parse(input);
+
+      int hours = inputDouble.floor();
+      double minutesDouble = (inputDouble - hours) * 60;
+      int minutes = minutesDouble.round();
+
+      setState(() {
+        _convertedTime =
+            '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+      });
+    } catch (e) {
+      setState(() {
+        _convertedTime = 'Invalid input. Please enter a valid double value.';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +180,7 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                   ]),
                   ...List.generate(filteredList.length, (index) {
                     final staff = filteredList[index];
+                    _convertDoubleToTime(staff.workingHours);
                     int deginationId = staff.designationId;
                     String deginationName = deginationList.isEmpty
                         ? ''
@@ -163,7 +193,7 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                       tableCell(staff.biomaxId),
                       tableCell(staff.mobile),
                       tableCell(staff.monthlySalary),
-                      tableCell(staff.workingHours),
+                      tableCell(_convertedTime),
                       SizedBox(
                         height: Sizes.height * 0.07,
                         child: Center(

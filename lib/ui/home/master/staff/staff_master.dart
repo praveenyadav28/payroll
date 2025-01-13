@@ -49,6 +49,34 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
     text: DateFormat('yyyy/MM/dd')
         .format(DateTime.now().add(const Duration(days: 7))),
   );
+  TimeOfDay? _selectedTime;
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ??
+          TimeOfDay.now(), // Use previous selection as initial time
+    );
+
+    if (pickedTime != null && pickedTime != _selectedTime) {
+      setState(() {
+        _selectedTime = pickedTime;
+        _calculateDoubledTime();
+      });
+    }
+  }
+
+  double _calculateDoubledTime() {
+    if (_selectedTime == null) {
+      return 0.0; // Return 0 if no time is selected
+    }
+    workingHourController.text = '';
+
+    double hours = _selectedTime!.hour.toDouble();
+    double minutes = _selectedTime!.minute.toDouble() / 60;
+    return hours + minutes;
+  }
+
   //State
   List<Map<String, dynamic>> stateList = [];
   int? stateId;
@@ -75,6 +103,35 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
   List<Map<String, dynamic>> departmentList = [];
   int? departmentId;
 
+  String _convertedTime = '';
+
+  void _convertDoubleToTime() {
+    String input = workingHourController.text;
+    if (input.isEmpty) {
+      setState(() {
+        _convertedTime = '';
+      });
+      return;
+    }
+
+    try {
+      double inputDouble = double.parse(input);
+
+      int hours = inputDouble.floor();
+      double minutesDouble = (inputDouble - hours) * 60;
+      int minutes = minutesDouble.round();
+
+      setState(() {
+        _convertedTime =
+            '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+      });
+    } catch (e) {
+      setState(() {
+        _convertedTime = 'Invalid input. Please enter a valid double value.';
+      });
+    }
+  }
+
   @override
   void initState() {
     fetchDistrict().then((value) => setState(() {}));
@@ -85,7 +142,11 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
         }));
     departmentData().then((value) => setState(() {
           departmentId = departmentList.first['id'];
-          widget.isNew ? null : fetchStaff().then((value) => setState(() {}));
+          widget.isNew
+              ? null
+              : fetchStaff().then((value) => setState(() {
+                    _convertDoubleToTime();
+                  }));
         }));
     _bankNameController.text = 'N/A';
 
@@ -560,12 +621,27 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                     labelText: 'Monthly Salary*',
                                     hintText: 'Monthly Salary',
                                   ),
-                                  CommonTextFormField(
-                                    textInputType: TextInputType.number,
-                                    controller: workingHourController,
-                                    labelText: 'Workinh Hours*',
-                                    hintText: 'Workinh Hours',
-                                  ),
+                                  dropdownTextfield(
+                                      context,
+                                      "Working Hours",
+                                      InkWell(
+                                        onTap: _selectTime,
+                                        child: Text(
+                                          _selectedTime == null
+                                              ? _convertedTime.isNotEmpty
+                                                  ? _convertedTime
+                                                  : _selectedTime
+                                                          ?.format(context) ??
+                                                      'Select Time'
+                                              : _selectedTime
+                                                      ?.format(context) ??
+                                                  'Select Time',
+                                          style: TextStyle(
+                                              color: AppColor.black,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                      )),
                                   CommonTextFormField(
                                     controller: _bankNameController,
                                     labelText: 'Bank Name',
@@ -605,7 +681,8 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                       showCustomSnackbar(context,
                                           'Please enter monthly salary');
                                     } else if (workingHourController
-                                        .text.isEmpty) {
+                                            .text.isEmpty &&
+                                        _selectedTime == null) {
                                       showCustomSnackbar(context,
                                           'Please enter working hours');
                                     } else {
@@ -722,7 +799,9 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
           "BankName": _bankNameController.text.trim().toString(),
           "BankAccountNo": _bankAccountNumberController.text.trim().toString(),
           "BankIFSC": _ifscNumberController.text.trim().toString(),
-          "Other1": workingHourController.text.trim().toString(),
+          "Other1": workingHourController.text.trim().isNotEmpty
+              ? workingHourController.text.trim().toString()
+              : _calculateDoubledTime().toStringAsFixed(2),
           "Other2": "Other2",
           "Other3": "Other3",
           "Other4": "Other4",
