@@ -156,8 +156,21 @@ class WorkingHoursCalculator {
         // Get all logs for the current date (including punch direction ' ')
         List<DeviceLog> logsForDay = groupedLogs[currentDate] ?? [];
 
+        // Filter logs with a time gap of more than 10 minutes between consecutive punches
+        List<DeviceLog> filteredLogsForDay = [];
+        if (logsForDay.isNotEmpty) {
+          filteredLogsForDay.add(logsForDay.first); // Keep the first log
+          for (int i = 1; i < logsForDay.length; i++) {
+            Duration diff =
+                logsForDay[i].punchTime.difference(logsForDay[i - 1].punchTime);
+            if (diff.inMinutes > 10) {
+              filteredLogsForDay.add(logsForDay[i]); // Add log if gap > 10 min
+            }
+          }
+        }
+
         // Filter logs for working hours calculation (exclude direction ' ')
-        List<DeviceLog> validLogsForDay = logsForDay
+        List<DeviceLog> validLogsForDay = filteredLogsForDay
             .where((log) =>
                 log.punchDirection == 'in' || log.punchDirection == 'out')
             .toList();
@@ -1217,7 +1230,7 @@ class WorkingShiftCalculator {
         }
 
         calculatedMonthlySalary += calculatedSalary;
-        shift['Salary'] = "₹${calculatedSalary.toStringAsFixed(2)}";
+        shift['Salary'] = "₹ ${calculatedSalary.toStringAsFixed(2)}";
         shift['differenceText'] = differenceText;
       }
 
@@ -1251,15 +1264,69 @@ class WorkingShiftCalculator {
     return result;
   }
 
+  // List<Map<String, dynamic>> createShifts(List<DeviceLog> logs) {
+  //   logs.sort((a, b) => a.logDate.compareTo(b.logDate)); // Sort logs by date
+
+  //   List<Map<String, dynamic>> shifts = [];
+  //   List<DeviceLog> currentShiftLogs = [];
+  //   DateTime? shiftStartTime;
+  //   DateTime shiftEndTime = DateTime(2000); // Placeholder
+
+  //   for (var log in logs) {
+  //     // Define new shift logic
+  //     if (log.punchDirection.toLowerCase() == "in" && log.logDate.hour >= 7) {
+  //       if (currentShiftLogs.isNotEmpty && log.logDate.isAfter(shiftEndTime)) {
+  //         // Save current shift
+  //         shifts.add({
+  //           "ShiftStart": shiftStartTime,
+  //           "PunchTime": currentShiftLogs,
+  //           "workinghours": calculateWorkingHours(currentShiftLogs)
+  //         });
+  //         currentShiftLogs = []; // Reset for new shift
+  //       }
+  //       shiftStartTime = log.logDate;
+  //       shiftEndTime = DateTime(
+  //           log.logDate.year, log.logDate.month, log.logDate.day + 1, 7, 0, 0);
+  //     }
+
+  //     // Add log to current shift
+  //     currentShiftLogs.add(log);
+  //   }
+
+  //   // Add the last shift if any logs remain
+  //   if (currentShiftLogs.isNotEmpty) {
+  //     shifts.add({
+  //       "ShiftStart": shiftStartTime,
+  //       "PunchTime": currentShiftLogs,
+  //       "workinghours": calculateWorkingHours(currentShiftLogs)
+  //     });
+  //   }
+
+  //   return shifts;
+  // }
+
   List<Map<String, dynamic>> createShifts(List<DeviceLog> logs) {
     logs.sort((a, b) => a.logDate.compareTo(b.logDate)); // Sort logs by date
 
     List<Map<String, dynamic>> shifts = [];
     List<DeviceLog> currentShiftLogs = [];
+    List<DeviceLog> duplicateLogs = [];
     DateTime? shiftStartTime;
     DateTime shiftEndTime = DateTime(2000); // Placeholder
 
-    for (var log in logs) {
+    for (int i = 0; i < logs.length; i++) {
+      var log = logs[i];
+
+      // Check if the current log is a duplicate (difference < 10 minutes)
+      if (currentShiftLogs.isNotEmpty) {
+        var lastLog = currentShiftLogs.last;
+        Duration diff = log.logDate.difference(lastLog.logDate);
+        if (diff.inMinutes < 10) {
+          duplicateLogs.add(log); // Add to "Duplicate" key
+          continue; // Skip adding to current shift
+        }
+      }
+
       // Define new shift logic
       if (log.punchDirection.toLowerCase() == "in" && log.logDate.hour >= 7) {
         if (currentShiftLogs.isNotEmpty && log.logDate.isAfter(shiftEndTime)) {
@@ -1267,9 +1334,11 @@ class WorkingShiftCalculator {
           shifts.add({
             "ShiftStart": shiftStartTime,
             "PunchTime": currentShiftLogs,
+            "Duplicate": duplicateLogs,
             "workinghours": calculateWorkingHours(currentShiftLogs)
           });
           currentShiftLogs = []; // Reset for new shift
+          duplicateLogs = []; // Reset duplicate logs
         }
         shiftStartTime = log.logDate;
         shiftEndTime = DateTime(
@@ -1285,6 +1354,7 @@ class WorkingShiftCalculator {
       shifts.add({
         "ShiftStart": shiftStartTime,
         "PunchTime": currentShiftLogs,
+        "Duplicate": duplicateLogs,
         "workinghours": calculateWorkingHours(currentShiftLogs)
       });
     }

@@ -490,9 +490,14 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                             tableCell('Total'),
                             tableCell('₹ $totalAmount'),
                             tableCell(''),
-                            SizedBox(
+                            TableCell(
+                              verticalAlignment:
+                                  TableCellVerticalAlignment.middle,
+                              child: SizedBox(
                                 height: Sizes.height * 0.07,
-                                child: tableCell('')),
+                                child: Center(child: Text('')),
+                              ),
+                            ),
                           ])
                         ]),
                   ],
@@ -507,9 +512,11 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
 
   // Utility function for creating table headers
   Widget tableHeader(String text) {
-    return SizedBox(
-      height: Sizes.height * 0.05,
-      child: Center(
+    return TableCell(
+      verticalAlignment: TableCellVerticalAlignment.middle,
+      child: Container(
+        height: Sizes.height * 0.05,
+        alignment: Alignment.center,
         child: Text(
           text,
           style: TextStyle(
@@ -521,13 +528,15 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
     );
   }
 
-  // Utility function for creating table cells
+// Utility function for creating table cells
   Widget tableCell(String text) {
     return TableCell(
       verticalAlignment: TableCellVerticalAlignment.middle,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }

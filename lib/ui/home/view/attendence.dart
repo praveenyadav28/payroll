@@ -1,4 +1,5 @@
-// screens/salary_screen.dart
+// ignore_for_file: unnecessary_null_comparison
+
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -557,8 +558,7 @@ class _AttendenceState extends State<Attendence> {
                                         : showActivityLog(
                                             employeeData['dailyPunchLogInfo'],
                                             employeeData[
-                                                'employeeWorkingHours'],
-                                            employeeData['dailySalary']);
+                                                'employeeWorkingHours']);
                                   },
                                 )),
                           ]);
@@ -572,8 +572,8 @@ class _AttendenceState extends State<Attendence> {
     );
   }
 
-  void showActivityLog(Map<String, List<DeviceLog>> dailyPunchLogInfo,
-      double workingHours, double dailySalary) {
+  void showActivityLog(
+      Map<String, List<DeviceLog>> dailyPunchLogInfo, double workingHours) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -589,8 +589,30 @@ class _AttendenceState extends State<Attendence> {
                   dailyPunchLogInfo.keys.length,
                   (index) {
                     String date = dailyPunchLogInfo.keys.elementAt(index);
+                    List<DeviceLog> duplicateList = [];
                     List<DeviceLog> logsForDay = dailyPunchLogInfo[date] ?? [];
-                    List<DeviceLog> validLogsForDay = logsForDay
+
+                    // Filter logs with a time gap of more than 10 minutes between consecutive punches
+                    List<DeviceLog> filteredLogsForDay = [];
+                    if (logsForDay.isNotEmpty) {
+                      filteredLogsForDay
+                          .add(logsForDay.first); // Keep the first log
+                      for (int i = 1; i < logsForDay.length; i++) {
+                        Duration diff = logsForDay[i]
+                            .punchTime
+                            .difference(logsForDay[i - 1].punchTime);
+                        if (diff.inMinutes > 10) {
+                          filteredLogsForDay
+                              .add(logsForDay[i]); // Add log if gap > 10 min
+                        } else {
+                          duplicateList.add(logsForDay[
+                              i]); // Add to invalid logs if gap <= 10 min
+                        }
+                      }
+                    }
+
+                    // Filter logs for working hours calculation (exclude direction ' ')
+                    List<DeviceLog> validLogsForDay = filteredLogsForDay
                         .where((log) =>
                             log.punchDirection == 'in' ||
                             log.punchDirection == 'out')
@@ -614,7 +636,6 @@ class _AttendenceState extends State<Attendence> {
                     String workingHoursDiff = "No data";
                     String workingHoursStatusFormatted = "No data";
                     double totalWorkedHours = 0.0;
-                    double salaryCalculated = 0.0;
                     if (validLogsForDay.isNotEmpty) {
                       if (validLogsForDay.length % 2 != 0) {
                         // Odd number of logs, so working hours are 0
@@ -630,9 +651,6 @@ class _AttendenceState extends State<Attendence> {
                           totalWorkedHours += pairDuration.inHours +
                               (pairDuration.inMinutes % 60) / 60.0;
                         }
-                        salaryCalculated = totalWorkedHours >= workingHours
-                            ? dailySalary * workingHours
-                            : totalWorkedHours * dailySalary;
                         // Total hours and minutes worked
                         int totalHoursWorked = totalWorkedHours.floor();
                         int totalMinutesWorked =
@@ -774,6 +792,36 @@ class _AttendenceState extends State<Attendence> {
                                   ],
                                 ),
                               ),
+                              duplicateList.isEmpty
+                                  ? Container()
+                                  : const SizedBox(width: 5),
+                              duplicateList.isEmpty
+                                  ? Container()
+                                  : Expanded(
+                                      child: Column(
+                                        children: [
+                                          const Text('Duplicate',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                          const Divider(),
+                                          Column(children: [
+                                            ...duplicateList
+                                                .where((log) =>
+                                                    log.punchDirection != null)
+                                                .map(
+                                              (log) {
+                                                return Text(
+                                                  '${log.punchTime.hour}:${log.punchTime.minute} ${log.punchDirection}',
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600),
+                                                );
+                                              },
+                                            ),
+                                          ]),
+                                        ],
+                                      ),
+                                    ),
                             ],
                           ),
                           const Divider(),
@@ -816,20 +864,13 @@ class _AttendenceState extends State<Attendence> {
                                           : workingHoursStatusFormatted
                                                   .contains("-")
                                               ? "Less $workingHoursStatusFormatted"
-                                              : 'More - $workingHoursStatusFormatted',
+                                              : 'More  $workingHoursStatusFormatted',
                                       style: TextStyle(
                                           fontSize: 13,
                                           color: workingHoursStatusFormatted
                                                   .contains("-")
                                               ? AppColor.red
                                               : AppColor.black),
-                                    ),
-                                    Text(
-                                      salaryCalculated.toStringAsFixed(2),
-                                      textAlign: TextAlign.start,
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -876,6 +917,8 @@ class _AttendenceState extends State<Attendence> {
                   (index) {
                     List<DeviceLog> logsForDay =
                         dailyPunchLogInfo[index]['PunchTime'];
+                    List<DeviceLog> duplicateList =
+                        dailyPunchLogInfo[index]['Duplicate'];
                     String date =
                         DateFormat('dd-MM-yyyy').format(logsForDay[0].logDate);
                     List<DeviceLog> validLogsForDay = logsForDay
@@ -978,7 +1021,7 @@ class _AttendenceState extends State<Attendence> {
                                 Expanded(
                                   child: Column(
                                     children: [
-                                      const Text('Break In/Out',
+                                      const Text('Break',
                                           style: TextStyle(
                                               fontWeight: FontWeight.w600)),
                                       const Divider(),
@@ -1014,6 +1057,38 @@ class _AttendenceState extends State<Attendence> {
                                     ],
                                   ),
                                 ),
+                                duplicateList.isEmpty
+                                    ? Container()
+                                    : const SizedBox(width: 5),
+                                duplicateList.isEmpty
+                                    ? Container()
+                                    : Expanded(
+                                        child: Column(
+                                          children: [
+                                            const Text('Duplicate',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w600)),
+                                            const Divider(),
+                                            Column(children: [
+                                              ...duplicateList
+                                                  .where((log) =>
+                                                      log.punchDirection !=
+                                                      null)
+                                                  .map(
+                                                (log) {
+                                                  return Text(
+                                                    '${log.punchTime.hour}:${log.punchTime.minute} ${log.punchDirection}',
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600),
+                                                  );
+                                                },
+                                              ),
+                                            ]),
+                                          ],
+                                        ),
+                                      ),
                               ],
                             ),
                             const Divider(),
@@ -1057,31 +1132,20 @@ class _AttendenceState extends State<Attendence> {
                                 ),
                                 Expanded(
                                   flex: 2,
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        validLogsForDay.length % 2 != 0 ||
-                                                dailyPunchLogInfo[index]
-                                                        ['workinghours'] ==
-                                                    0.0
-                                            ? ""
-                                            : '${dailyPunchLogInfo[index]['differenceText']}',
-                                        style: TextStyle(
-                                            fontSize: 13,
-                                            color: dailyPunchLogInfo[index]
-                                                        ['differenceText']
-                                                    .contains("Less")
-                                                ? AppColor.red
-                                                : AppColor.black),
-                                      ),
-                                      Text(
-                                        dailyPunchLogInfo[index]['Salary'],
-                                        textAlign: TextAlign.start,
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    validLogsForDay.length % 2 != 0 ||
+                                            dailyPunchLogInfo[index]
+                                                    ['workinghours'] ==
+                                                0.0
+                                        ? ""
+                                        : '${dailyPunchLogInfo[index]['differenceText']}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: dailyPunchLogInfo[index]
+                                                    ['differenceText']
+                                                .contains("Less")
+                                            ? AppColor.red
+                                            : AppColor.black),
                                   ),
                                 ),
                               ],

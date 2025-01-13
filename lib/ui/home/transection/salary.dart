@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -612,8 +614,30 @@ class _SalaryScreenState extends State<SalaryScreen> {
                   dailyPunchLogInfo.keys.length,
                   (index) {
                     String date = dailyPunchLogInfo.keys.elementAt(index);
+                    List<DeviceLog> duplicateList = [];
                     List<DeviceLog> logsForDay = dailyPunchLogInfo[date] ?? [];
-                    List<DeviceLog> validLogsForDay = logsForDay
+
+                    // Filter logs with a time gap of more than 10 minutes between consecutive punches
+                    List<DeviceLog> filteredLogsForDay = [];
+                    if (logsForDay.isNotEmpty) {
+                      filteredLogsForDay
+                          .add(logsForDay.first); // Keep the first log
+                      for (int i = 1; i < logsForDay.length; i++) {
+                        Duration diff = logsForDay[i]
+                            .punchTime
+                            .difference(logsForDay[i - 1].punchTime);
+                        if (diff.inMinutes > 10) {
+                          filteredLogsForDay
+                              .add(logsForDay[i]); // Add log if gap > 10 min
+                        } else {
+                          duplicateList.add(logsForDay[
+                              i]); // Add to invalid logs if gap <= 10 min
+                        }
+                      }
+                    }
+
+                    // Filter logs for working hours calculation (exclude direction ' ')
+                    List<DeviceLog> validLogsForDay = filteredLogsForDay
                         .where((log) =>
                             log.punchDirection == 'in' ||
                             log.punchDirection == 'out')
@@ -797,6 +821,36 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                   ],
                                 ),
                               ),
+                              duplicateList.isEmpty
+                                  ? Container()
+                                  : const SizedBox(width: 5),
+                              duplicateList.isEmpty
+                                  ? Container()
+                                  : Expanded(
+                                      child: Column(
+                                        children: [
+                                          const Text('Duplicate',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                          const Divider(),
+                                          Column(children: [
+                                            ...duplicateList
+                                                .where((log) =>
+                                                    log.punchDirection != null)
+                                                .map(
+                                              (log) {
+                                                return Text(
+                                                  '${log.punchTime.hour}:${log.punchTime.minute} ${log.punchDirection}',
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600),
+                                                );
+                                              },
+                                            ),
+                                          ]),
+                                        ],
+                                      ),
+                                    ),
                             ],
                           ),
                           const Divider(),
@@ -839,7 +893,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                           : workingHoursStatusFormatted
                                                   .contains("-")
                                               ? "Less $workingHoursStatusFormatted"
-                                              : 'More - $workingHoursStatusFormatted',
+                                              : 'More  $workingHoursStatusFormatted',
                                       style: TextStyle(
                                           fontSize: 13,
                                           color: workingHoursStatusFormatted
@@ -848,7 +902,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                               : AppColor.black),
                                     ),
                                     Text(
-                                      salaryCalculated.toStringAsFixed(2),
+                                      "₹ ${salaryCalculated.toStringAsFixed(2)}",
                                       textAlign: TextAlign.start,
                                       style: const TextStyle(
                                           fontSize: 18,
@@ -899,6 +953,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
                   (index) {
                     List<DeviceLog> logsForDay =
                         dailyPunchLogInfo[index]['PunchTime'];
+                    List<DeviceLog> duplicateList =
+                        dailyPunchLogInfo[index]['Duplicate'];
                     String date =
                         DateFormat('dd-MM-yyyy').format(logsForDay[0].logDate);
                     List<DeviceLog> validLogsForDay = logsForDay
@@ -1001,7 +1057,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                 Expanded(
                                   child: Column(
                                     children: [
-                                      const Text('Break In/Out',
+                                      const Text('Break',
                                           style: TextStyle(
                                               fontWeight: FontWeight.w600)),
                                       const Divider(),
@@ -1037,6 +1093,38 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                     ],
                                   ),
                                 ),
+                                duplicateList.isEmpty
+                                    ? Container()
+                                    : const SizedBox(width: 5),
+                                duplicateList.isEmpty
+                                    ? Container()
+                                    : Expanded(
+                                        child: Column(
+                                          children: [
+                                            const Text('Duplicate',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w600)),
+                                            const Divider(),
+                                            Column(children: [
+                                              ...duplicateList
+                                                  .where((log) =>
+                                                      log.punchDirection !=
+                                                      null)
+                                                  .map(
+                                                (log) {
+                                                  return Text(
+                                                    '${log.punchTime.hour}:${log.punchTime.minute} ${log.punchDirection}',
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600),
+                                                  );
+                                                },
+                                              ),
+                                            ]),
+                                          ],
+                                        ),
+                                      ),
                               ],
                             ),
                             const Divider(),
