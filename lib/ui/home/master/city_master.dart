@@ -118,7 +118,7 @@ class _CityMasterState extends State<CityMaster> {
                       var result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DistrictMaster(),
+                            builder: (context) => const DistrictMaster(),
                           ));
                       if (result != null) {
                         districtValue = null;

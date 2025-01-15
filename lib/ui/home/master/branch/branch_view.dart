@@ -98,114 +98,269 @@ class _BranchViewScreenState extends State<BranchViewScreen> {
               horizontal: Sizes.width * .05,
               vertical: Sizes.height * .02,
             ),
-            child: Column(
-              children: [
-                Container(
-                  alignment: Alignment.topCenter,
-                  width: Sizes.width * 1,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                    border: Border.all(
-                      color: const Color(0xff377785),
-                    ),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xff4EB1C6), Color(0xff56C891)],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Branch List",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColor.black,
-                        fontWeight: FontWeight.bold,
+            child: Sizes.width < 800
+                ? Column(
+                    children: List.generate(branchList.length, (index) {
+                    var branch = branchList[index];
+                    return Container(
+                      margin: EdgeInsets.only(bottom: Sizes.height * 0.02),
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xff377785),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-                Table(
-                  border: TableBorder.all(
-                    borderRadius: BorderRadius.circular(0),
-                    color: const Color(0xff377785),
-                  ),
-                  children: [
-                    TableRow(
-                      children: [
-                        tableHeader("Branch Name"),
-                        tableHeader("City"),
-                        tableHeader("Biomax Serial No."),
-                        tableHeader("Device Name"),
-                        tableHeader("Email Id"),
-                        tableHeader("Admin Password"),
-                        tableHeader("Staff Password"),
-                        tableHeader("Actions"),
-                      ],
-                    ),
-                  ],
-                ),
-                Table(
-                  border: TableBorder.all(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                    color: const Color(0xff377785),
-                  ),
-                  children: branchList.map((branch) {
-                    return TableRow(
-                      children: [
-                        tableCell(branch.bLocationName),
-                        tableCell(branch.bCityName ?? 'N/A'),
-                        tableCell(branch.bDeviceSerialNo ?? 'N/A'),
-                        tableCell(branch.bDeviceName ?? 'N/A'),
-                        tableCell(branch.bEmailId ?? 'N/A'),
-                        tableCell(branch.other1 ?? 'N/A'),
-                        tableCell(branch.other3 ?? 'N/A'),
-                        TableCell(
-                          verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit, color: AppColor.primery),
-                                onPressed: () async {
-                                  var result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => BranchMasterScreen(
-                                        isNew: false,
-                                        branchId: branch.bid,
-                                      ),
-                                    ),
-                                  );
-                                  if (result != null) {
-                                    _fetchBranchesAndStream(); // Refresh data
-                                  }
-                                },
+                      child: ExpansionTile(
+                        title: ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 7.5),
+                            margin: const EdgeInsets.only(right: 10),
+                            decoration: BoxDecoration(
+                                color: AppColor.primery,
+                                borderRadius: BorderRadius.circular(30)),
+                            child: Text(
+                              "${index + 1}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: AppColor.white,
                               ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: AppColor.red),
-                                onPressed: () {
-                                  deleteBranchApi(branch.bid).then(
-                                    (value) => _fetchBranchesAndStream(),
-                                  );
-                                },
-                              ),
-                            ],
+                            ),
+                          ),
+                          title: Text(
+                            branch.bLocationName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: AppColor.black,
+                            ),
                           ),
                         ),
-                      ],
+                        children: [
+                          datastylerow("Biomax Serial Number",
+                              branch.bDeviceSerialNo ?? ''),
+                          datastylerow("City", branch.bCityName ?? ''),
+                          datastylerow("Email", branch.bEmailId ?? ''),
+                          datastylerow("Admin Password", branch.other1 ?? ''),
+                          datastylerow("Staff Password", branch.other3 ?? ''),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      var result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              BranchMasterScreen(
+                                            isNew: false,
+                                            branchId: branch.bid,
+                                          ),
+                                        ),
+                                      );
+                                      if (result != null) {
+                                        _fetchBranchesAndStream(); // Refresh data
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColor.primery),
+                                    child: Text(
+                                      "Edit",
+                                      style: TextStyle(
+                                          color: AppColor.white, fontSize: 16),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: Sizes.width * 0.05),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Branch'),
+                                          content: const Text(
+                                              "Are you sure you want to delete this branch from the list?"),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context)
+                                                    .pop(); // Closes the dialog
+                                              },
+                                              child: const Text('No'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                deleteBranchApi(branch.bid)
+                                                    .then(
+                                                  (value) =>
+                                                      _fetchBranchesAndStream(),
+                                                );
+                                              },
+                                              child: const Text('Yes'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColor.red),
+                                    child: Text(
+                                      "Delete",
+                                      style: TextStyle(
+                                          color: AppColor.white, fontSize: 16),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: Sizes.height * 0.02)
+                        ],
+                      ),
                     );
-                  }).toList(),
-                ),
-              ],
-            ),
+                  }))
+                : Column(
+                    children: [
+                      Container(
+                        alignment: Alignment.topCenter,
+                        width: Sizes.width * 1,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                          ),
+                          border: Border.all(
+                            color: const Color(0xff377785),
+                          ),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xff4EB1C6), Color(0xff56C891)],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Branch List",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Table(
+                        border: TableBorder.all(
+                          borderRadius: BorderRadius.circular(0),
+                          color: const Color(0xff377785),
+                        ),
+                        children: [
+                          TableRow(
+                            children: [
+                              tableHeader("Branch Name"),
+                              tableHeader("City"),
+                              tableHeader("Biomax Serial No."),
+                              tableHeader("Device Name"),
+                              tableHeader("Email Id"),
+                              tableHeader("Admin Password"),
+                              tableHeader("Staff Password"),
+                              tableHeader("Actions"),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Table(
+                        border: TableBorder.all(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
+                          ),
+                          color: const Color(0xff377785),
+                        ),
+                        children: branchList.map((branch) {
+                          return TableRow(
+                            children: [
+                              tableCell(branch.bLocationName),
+                              tableCell(branch.bCityName ?? 'N/A'),
+                              tableCell(branch.bDeviceSerialNo ?? 'N/A'),
+                              tableCell(branch.bDeviceName ?? 'N/A'),
+                              tableCell(branch.bEmailId ?? 'N/A'),
+                              tableCell(branch.other1 ?? 'N/A'),
+                              tableCell(branch.other3 ?? 'N/A'),
+                              TableCell(
+                                verticalAlignment:
+                                    TableCellVerticalAlignment.middle,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit,
+                                          color: AppColor.primery),
+                                      onPressed: () async {
+                                        var result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                BranchMasterScreen(
+                                              isNew: false,
+                                              branchId: branch.bid,
+                                            ),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          _fetchBranchesAndStream(); // Refresh data
+                                        }
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete,
+                                          color: AppColor.red),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Delete Branch'),
+                                            content: const Text(
+                                                "Are you sure you want to delete this branch from the list?"),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(); // Closes the dialog
+                                                },
+                                                child: const Text('No'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  deleteBranchApi(branch.bid)
+                                                      .then(
+                                                    (value) =>
+                                                        _fetchBranchesAndStream(),
+                                                  );
+                                                },
+                                                child: const Text('Yes'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
           );
         },
       ),

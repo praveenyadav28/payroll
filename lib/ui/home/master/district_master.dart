@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:payroll/components/api.dart';
 import 'package:payroll/utils/button.dart';
 import 'package:payroll/utils/colors.dart';
@@ -257,16 +256,6 @@ class _DistrictMasterState extends State<DistrictMaster> {
                         Expanded(
                           flex: 1,
                           child: PopupMenuButton(
-                            // onOpened: () {
-                            //   setState(() {
-                            //     selectedIndex = index;
-                            //   });
-                            // },
-                            // onCanceled: () {
-                            //   setState(() {
-                            //     selectedIndex = -1;
-                            //   });
-                            // },
                             position: PopupMenuPosition.under,
                             itemBuilder: (BuildContext context) =>
                                 <PopupMenuEntry>[

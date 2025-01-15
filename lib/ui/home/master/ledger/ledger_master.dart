@@ -206,7 +206,7 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    CityMaster(),
+                                                    const CityMaster(),
                                               ));
                                           if (result != null) {
                                             cityValue = null;
@@ -293,7 +293,7 @@ class _LedgerMasterScreenState extends State<LedgerMasterScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    DistrictMaster(),
+                                                    const DistrictMaster(),
                                               ));
                                           if (result != null) {
                                             districtValue = null;

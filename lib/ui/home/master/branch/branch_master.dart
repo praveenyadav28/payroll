@@ -395,7 +395,7 @@ class _BranchMasterScreenState extends State<BranchMasterScreen> {
                                               color: AppColor.black,
                                               fontSize: 16,
                                               fontWeight: FontWeight.w500)),
-                                      Spacer(),
+                                      const Spacer(),
                                       Radio<int>(
                                         value: 1,
                                         groupValue: _selectedOption,

@@ -129,57 +129,10 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                     color: AppColor.black,
                   )),
             ], context: context),
-            Container(
-              alignment: Alignment.topCenter,
-              width: Sizes.width * 1,
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-                border: Border.all(
-                  color: const Color(0xff377785),
-                ),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xff4EB1C6), Color(0xff56C891)],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  "Staff List",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: Sizes.width * 1,
-              child: Table(
-                border: TableBorder.all(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                  color: const Color(0xff377785),
-                ),
-                children: [
-                  TableRow(children: [
-                    tableHeader("Name"),
-                    tableHeader("Designation"),
-                    tableHeader("Biomax Id"),
-                    tableHeader("Mobile"),
-                    tableHeader("Monthly Salary"),
-                    tableHeader("Working Hours"),
-                    tableHeader("Action"),
-                  ]),
-                  ...List.generate(filteredList.length, (index) {
-                    final staff = filteredList[index];
+            Sizes.width < 800
+                ? Column(
+                    children: List.generate(filteredList.length, (index) {
+                    var staff = filteredList[index];
                     _convertDoubleToTime(staff.workingHours);
                     int deginationId = staff.designationId;
                     String deginationName = deginationList.isEmpty
@@ -187,82 +140,344 @@ class _StaffViewScreenState extends State<StaffViewScreen> {
                         : deginationList.firstWhere(
                             (element) => element['id'] == deginationId)['name'];
 
-                    return TableRow(children: [
-                      tableCell(staff.name),
-                      tableCell(deginationName),
-                      tableCell(staff.biomaxId),
-                      tableCell(staff.mobile),
-                      tableCell(staff.monthlySalary),
-                      tableCell(_convertedTime),
-                      SizedBox(
-                        height: Sizes.height * 0.07,
-                        child: Center(
-                          child: widget.staffListType == false
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.receipt,
-                                    color: AppColor.primery,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PaymentScreen(
-                                            paymentVoucherNo: 0,
-                                            employeeData: {
-                                              'id': staff.id,
-                                              'name': staff.name,
-                                              'monthlySalary':
-                                                  staff.monthlySalary,
-                                              'dueSalary': 0,
-                                            }),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.edit,
-                                        color: AppColor.primery,
-                                      ),
-                                      onPressed: () async {
-                                        var result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                StaffMasterScreen(
-                                                    isNew: false,
-                                                    staffId: staff.id),
-                                          ),
-                                        );
-                                        if (result != null) {
-                                          getStaffList().then((value) =>
-                                              setState(() {})); // Refresh data
-                                        }
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red),
-                                      onPressed: () {
-                                        deleteStaffApi(staff.id).then((_) {
-                                          getStaffList()
-                                              .then((value) => setState(() {}));
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
+                    return Container(
+                      margin: EdgeInsets.only(bottom: Sizes.height * 0.02),
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xff377785),
                         ),
                       ),
-                    ]);
-                  }),
-                ],
-              ),
-            ),
+                      child: Column(
+                        children: [
+                          ExpansionTile(
+                            title: ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 7.5),
+                                margin: const EdgeInsets.only(right: 10),
+                                decoration: BoxDecoration(
+                                    color: AppColor.primery,
+                                    borderRadius: BorderRadius.circular(30)),
+                                child: Text(
+                                  staff.biomaxId,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColor.white,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                staff.name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.black,
+                                ),
+                              ),
+                            ),
+                            children: [
+                              datastylerow("Degination", deginationName),
+                              datastylerow("Mobile No.", staff.mobile),
+                              datastylerow(
+                                  "Monthly Salary", staff.monthlySalary),
+                              datastylerow("Working Hour", _convertedTime),
+                              widget.staffListType == false
+                                  ? ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColor.primery),
+                                      child: Text("Payment",
+                                          style: TextStyle(
+                                              color: AppColor.white,
+                                              fontSize: 16)),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PaymentScreen(
+                                                paymentVoucherNo: 0,
+                                                employeeData: {
+                                                  'id': staff.id,
+                                                  'name': staff.name,
+                                                  'monthlySalary':
+                                                      staff.monthlySalary,
+                                                  'dueSalary': 0,
+                                                }),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () async {
+                                                var result =
+                                                    await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        StaffMasterScreen(
+                                                            isNew: false,
+                                                            staffId: staff.id),
+                                                  ),
+                                                );
+                                                if (result != null) {
+                                                  getStaffList().then((value) =>
+                                                      setState(
+                                                          () {})); // Refresh data
+                                                }
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColor.primery),
+                                              child: Text(
+                                                "Edit",
+                                                style: TextStyle(
+                                                    color: AppColor.white,
+                                                    fontSize: 16),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: Sizes.width * 0.05),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                    title: const Text(
+                                                        'Delete Staff'),
+                                                    content: const Text(
+                                                        "Are you sure you want to delete this staff from the list?"),
+                                                    actions: <Widget>[
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context)
+                                                              .pop(); // Closes the dialog
+                                                        },
+                                                        child: const Text('No'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          deleteStaffApi(
+                                                                  staff.id)
+                                                              .then((_) {
+                                                            getStaffList().then(
+                                                                (value) =>
+                                                                    setState(
+                                                                        () {}));
+                                                          });
+                                                        },
+                                                        child:
+                                                            const Text('Yes'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColor.red),
+                                              child: Text(
+                                                "Delete",
+                                                style: TextStyle(
+                                                    color: AppColor.white,
+                                                    fontSize: 16),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                              SizedBox(height: Sizes.height * 0.02)
+                            ],
+                          )
+                        ],
+                      ),
+                    );
+                  }))
+                : Column(
+                    children: [
+                      Container(
+                        alignment: Alignment.topCenter,
+                        width: Sizes.width * 1,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                          ),
+                          border: Border.all(
+                            color: const Color(0xff377785),
+                          ),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xff4EB1C6), Color(0xff56C891)],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Staff List",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: Sizes.width * 1,
+                        child: Table(
+                          border: TableBorder.all(
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(10),
+                              bottomRight: Radius.circular(10),
+                            ),
+                            color: const Color(0xff377785),
+                          ),
+                          children: [
+                            TableRow(children: [
+                              tableHeader("Name"),
+                              tableHeader("Designation"),
+                              tableHeader("Biomax Id"),
+                              tableHeader("Mobile"),
+                              tableHeader("Monthly Salary"),
+                              tableHeader("Working Hours"),
+                              tableHeader("Action"),
+                            ]),
+                            ...List.generate(filteredList.length, (index) {
+                              final staff = filteredList[index];
+                              _convertDoubleToTime(staff.workingHours);
+                              int deginationId = staff.designationId;
+                              String deginationName = deginationList.isEmpty
+                                  ? ''
+                                  : deginationList.firstWhere((element) =>
+                                      element['id'] == deginationId)['name'];
+
+                              return TableRow(children: [
+                                tableCell(staff.name),
+                                tableCell(deginationName),
+                                tableCell(staff.biomaxId),
+                                tableCell(staff.mobile),
+                                tableCell(staff.monthlySalary),
+                                tableCell(_convertedTime),
+                                SizedBox(
+                                  height: Sizes.height * 0.07,
+                                  child: Center(
+                                    child: widget.staffListType == false
+                                        ? IconButton(
+                                            icon: Icon(
+                                              Icons.receipt,
+                                              color: AppColor.primery,
+                                            ),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PaymentScreen(
+                                                          paymentVoucherNo: 0,
+                                                          employeeData: {
+                                                        'id': staff.id,
+                                                        'name': staff.name,
+                                                        'monthlySalary':
+                                                            staff.monthlySalary,
+                                                        'dueSalary': 0,
+                                                      }),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: AppColor.primery,
+                                                ),
+                                                onPressed: () async {
+                                                  var result =
+                                                      await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          StaffMasterScreen(
+                                                              isNew: false,
+                                                              staffId:
+                                                                  staff.id),
+                                                    ),
+                                                  );
+                                                  if (result != null) {
+                                                    getStaffList().then(
+                                                        (value) => setState(
+                                                            () {})); // Refresh data
+                                                  }
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.delete,
+                                                    color: Colors.red),
+                                                onPressed: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) =>
+                                                        AlertDialog(
+                                                      title: const Text(
+                                                          'Delete Staff'),
+                                                      content: const Text(
+                                                          "Are you sure you want to delete this staff from the list?"),
+                                                      actions: <Widget>[
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop(); // Closes the dialog
+                                                          },
+                                                          child:
+                                                              const Text('No'),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            deleteStaffApi(
+                                                                    staff.id)
+                                                                .then((_) {
+                                                              getStaffList().then(
+                                                                  (value) =>
+                                                                      setState(
+                                                                          () {}));
+                                                            });
+                                                          },
+                                                          child:
+                                                              const Text('Yes'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                ),
+                              ]);
+                            }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
           ],
         ),
       ),

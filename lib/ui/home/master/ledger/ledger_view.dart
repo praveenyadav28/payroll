@@ -70,109 +70,249 @@ class _LedgerViewScreenState extends State<LedgerViewScreen> {
               horizontal: Sizes.width * .05, vertical: Sizes.height * .02),
           child: Column(
             children: [
-              Container(
-                alignment: Alignment.topCenter,
-                width: Sizes.width * 1,
-                height: 50,
-                decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10)),
-                    border: Border.all(
-                      color: const Color(0xff377785),
-                    ),
-                    gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xff4EB1C6), Color(0xff56C891)])),
-                child: Center(
-                    child: Text(
-                  "Ledger List",
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: AppColor.black,
-                      fontWeight: FontWeight.bold),
-                )),
-              ),
-              SizedBox(
-                width: Sizes.width * 1,
-                child: Table(
-                  border: TableBorder.all(
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(10),
-                          bottomRight: Radius.circular(10)),
-                      color: const Color(0xff377785)),
-                  children: [
-                    TableRow(children: [
-                      tableHeader("Name"),
-                      tableHeader("City"),
-                      tableHeader("State"),
-                      tableHeader("GST Type"),
-                      tableHeader("GST Number"),
-                      tableHeader("Actions"),
-                    ]),
-                    ...List.generate(ledgerList.length, (index) {
+              Sizes.width < 800
+                  ? Column(
+                      children: List.generate(ledgerList.length, (index) {
                       final ledger = ledgerList[index];
-                      int cityId = ledger['city_Id'];
-                      String cityName = cityList.firstWhere((element) =>
-                          element['city_Id'] == cityId)['city_Name'];
-                      String stateName = cityList.firstWhere((element) =>
-                          element['city_Id'] == cityId)['state_Name'];
-
                       int gstDealerId = ledger['gstTypeId'];
                       String gstDealerName = gestDealerList.firstWhere(
                           (element) => element['id'] == gstDealerId)['name'];
 
-                      return TableRow(children: [
-                        tableCell(ledger['ledger_Name']),
-                        tableCell(cityName),
-                        tableCell(stateName),
-                        tableCell(gstDealerName),
-                        tableCell("${ledger['gst_No']}"),
-                        SizedBox(
-                            height: Sizes.height * 0.07,
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                      icon: Icon(Icons.edit,
-                                          color: AppColor.primery),
-                                      onPressed: () async {
-                                        var result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                LedgerMasterScreen(
-                                              isNew: false,
-                                              ledgerId: ledger['ledger_Id'],
-                                            ),
-                                          ),
-                                        );
-                                        if (result != null) {
-                                          getLedgerList().then((value) =>
-                                              setState(() {})); // Refresh data
-                                        }
-                                      }),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () {
-                                      deleteLedgerApi(ledger['ledger_Id'])
-                                          .then((value) {
-                                        getLedgerList()
-                                            .then((value) => setState(() {}));
-                                      });
-                                    },
-                                  ),
-                                ],
+                      return Container(
+                        margin: EdgeInsets.only(bottom: Sizes.height * 0.02),
+                        alignment: Alignment.topCenter,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xff377785),
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            ledger['ledger_Name'],
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColor.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            gstDealerName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColor.black.withOpacity(.7),
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                  icon:
+                                      Icon(Icons.edit, color: AppColor.primery),
+                                  onPressed: () async {
+                                    var result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            LedgerMasterScreen(
+                                          isNew: false,
+                                          ledgerId: ledger['ledger_Id'],
+                                        ),
+                                      ),
+                                    );
+                                    if (result != null) {
+                                      getLedgerList().then((value) =>
+                                          setState(() {})); // Refresh data
+                                    }
+                                  }),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete Ledger'),
+                                      content: const Text(
+                                          "Are you sure you want to delete this ledger from the list?"),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(); // Closes the dialog
+                                          },
+                                          child: const Text('No'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            deleteLedgerApi(ledger['ledger_Id'])
+                                                .then((value) {
+                                              getLedgerList().then(
+                                                  (value) => setState(() {}));
+                                            });
+                                          },
+                                          child: const Text('Yes'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            )),
-                      ]);
-                    })
-                  ],
-                ),
-              )
+                            ],
+                          ),
+                        ),
+                      );
+                    }))
+                  : Column(
+                      children: [
+                        Container(
+                          alignment: Alignment.topCenter,
+                          width: Sizes.width * 1,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10)),
+                              border: Border.all(
+                                color: const Color(0xff377785),
+                              ),
+                              gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0xff4EB1C6),
+                                    Color(0xff56C891)
+                                  ])),
+                          child: Center(
+                              child: Text(
+                            "Ledger List",
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: AppColor.black,
+                                fontWeight: FontWeight.bold),
+                          )),
+                        ),
+                        SizedBox(
+                          width: Sizes.width * 1,
+                          child: Table(
+                            border: TableBorder.all(
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                                color: const Color(0xff377785)),
+                            children: [
+                              TableRow(children: [
+                                tableHeader("Name"),
+                                tableHeader("City"),
+                                tableHeader("State"),
+                                tableHeader("GST Type"),
+                                tableHeader("GST Number"),
+                                tableHeader("Actions"),
+                              ]),
+                              ...List.generate(ledgerList.length, (index) {
+                                final ledger = ledgerList[index];
+                                int cityId = ledger['city_Id'];
+                                String cityName = cityList.firstWhere(
+                                    (element) =>
+                                        element['city_Id'] ==
+                                        cityId)['city_Name'];
+                                String stateName = cityList.firstWhere(
+                                    (element) =>
+                                        element['city_Id'] ==
+                                        cityId)['state_Name'];
+
+                                int gstDealerId = ledger['gstTypeId'];
+                                String gstDealerName =
+                                    gestDealerList.firstWhere((element) =>
+                                        element['id'] == gstDealerId)['name'];
+
+                                return TableRow(children: [
+                                  tableCell(ledger['ledger_Name']),
+                                  tableCell(cityName),
+                                  tableCell(stateName),
+                                  tableCell(gstDealerName),
+                                  tableCell("${ledger['gst_No']}"),
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                                icon: Icon(Icons.edit,
+                                                    color: AppColor.primery),
+                                                onPressed: () async {
+                                                  var result =
+                                                      await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          LedgerMasterScreen(
+                                                        isNew: false,
+                                                        ledgerId:
+                                                            ledger['ledger_Id'],
+                                                      ),
+                                                    ),
+                                                  );
+                                                  if (result != null) {
+                                                    getLedgerList().then(
+                                                        (value) => setState(
+                                                            () {})); // Refresh data
+                                                  }
+                                                }),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete,
+                                                  color: Colors.red),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                    title: const Text(
+                                                        'Delete Ledger'),
+                                                    content: const Text(
+                                                        "Are you sure you want to delete this ledger from the list?"),
+                                                    actions: <Widget>[
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context)
+                                                              .pop(); // Closes the dialog
+                                                        },
+                                                        child: const Text('No'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          deleteLedgerApi(ledger[
+                                                                  'ledger_Id'])
+                                                              .then((value) {
+                                                            getLedgerList()
+                                                                .then((value) =>
+                                                                    setState(
+                                                                        () {}));
+                                                          });
+                                                        },
+                                                        child:
+                                                            const Text('Yes'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      )),
+                                ]);
+                              })
+                            ],
+                          ),
+                        )
+                      ],
+                    )
             ],
           ),
         ));

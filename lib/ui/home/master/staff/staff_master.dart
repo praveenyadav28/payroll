@@ -297,7 +297,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    CityMaster(),
+                                                    const CityMaster(),
                                               ));
                                           if (result != null) {
                                             cityValue = null;
@@ -384,7 +384,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
-                                                    DistrictMaster(),
+                                                    const DistrictMaster(),
                                               ));
                                           if (result != null) {
                                             districtValue = null;

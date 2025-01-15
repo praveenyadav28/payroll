@@ -92,16 +92,26 @@ class ReuseContainer extends StatelessWidget {
                                 fontWeight: FontWeight.w500),
                           ))),
                 ],
-              )
-
-              //  ListTile(
-              //   dense: true,
-              //   title: ,
-              //   trailing: ,
-              // ),
-              ),
+              )),
         ),
       ],
     );
   }
+}
+
+datastylerow(String title, String subtitle) {
+  return ListTile(
+    dense: true,
+    title: Text(
+      title,
+      style: TextStyle(
+          fontSize: 15, fontWeight: FontWeight.w500, color: AppColor.black),
+    ),
+    trailing: Text(
+      subtitle.trim(),
+      style: TextStyle(
+          fontSize: 15, fontWeight: FontWeight.w500, color: AppColor.grey),
+      textAlign: TextAlign.end,
+    ),
+  );
 }

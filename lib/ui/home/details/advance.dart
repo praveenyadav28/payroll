@@ -71,93 +71,191 @@ class _AdvanceScreenState extends State<AdvanceScreen> {
                     color: AppColor.black,
                   )),
             ], context: context),
-            Container(
-              alignment: Alignment.topCenter,
-              width: Sizes.width * 1,
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-                border: Border.all(
-                  color: const Color(0xff377785),
-                ),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xff4EB1C6), Color(0xff56C891)],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  "Staff List",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: Sizes.width * 1,
-              child: Table(
-                border: TableBorder.all(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                  color: const Color(0xff377785),
-                ),
-                children: [
-                  TableRow(children: [
-                    tableHeader("Name"),
-                    tableHeader("Designation"),
-                    tableHeader("Biomax Id"),
-                    tableHeader("Mobile"),
-                    tableHeader("Monthly Salary"),
-                    tableHeader("Advance Amount"),
-                    tableHeader("Action"),
-                  ]),
-                  ...List.generate(filteredList.length, (index) {
+            Sizes.width < 800
+                ? Column(
+                    children: List.generate(filteredList.length, (index) {
                     final staff = filteredList[index];
 
                     double dueAmount = double.parse(staff['dueAmount']);
-
-                    return TableRow(children: [
-                      tableCell(staff['staffName']),
-                      tableCell(staff['degination']),
-                      tableCell(staff['biomaxId']),
-                      tableCell(staff['mobileNo']),
-                      tableCell(staff['monthlySalary']),
-                      tableCell("${dueAmount.abs()}"),
-                      IconButton(
-                        icon: Icon(
-                          Icons.receipt,
-                          color: AppColor.primery,
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PaymentScreen(
+                                paymentVoucherNo: 0,
+                                employeeData: {
+                                  'id': int.parse(staff['staffId']),
+                                  'name': staff['staffName'],
+                                  'monthlySalary': staff['monthlySalary'],
+                                  'dueSalary': 0,
+                                }),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: Sizes.height * 0.02),
+                        alignment: Alignment.topCenter,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xff377785),
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PaymentScreen(
-                                  paymentVoucherNo: 0,
-                                  employeeData: {
-                                    'id': int.parse(staff['staffId']),
-                                    'name': staff['staffName'],
-                                    'monthlySalary': staff['monthlySalary'],
-                                    'dueSalary': 0,
-                                  }),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 2, horizontal: 7.5),
+                                margin: const EdgeInsets.only(right: 10),
+                                decoration: BoxDecoration(
+                                    color: AppColor.primery,
+                                    borderRadius: BorderRadius.circular(30)),
+                                child: Text(
+                                  staff['biomaxId'],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColor.white,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                staff['staffName'],
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.black,
+                                ),
+                              ),
+                              trailing: Text(
+                                "₹ ${dueAmount.abs()}",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.green,
+                                ),
+                              ),
                             ),
-                          );
-                        },
-                      )
-                    ]);
-                  }),
-                ],
-              ),
-            ),
+                            ListTile(
+                              dense: true,
+                              title: Text(
+                                staff['degination'],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.black.withOpacity(.7),
+                                ),
+                              ),
+                              trailing: Text(
+                                staff['mobileNo'],
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.black.withOpacity(.7),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  }))
+                : Column(
+                    children: [
+                      Container(
+                        alignment: Alignment.topCenter,
+                        width: Sizes.width * 1,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                          ),
+                          border: Border.all(
+                            color: const Color(0xff377785),
+                          ),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xff4EB1C6), Color(0xff56C891)],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Staff List",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: Sizes.width * 1,
+                        child: Table(
+                          border: TableBorder.all(
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(10),
+                              bottomRight: Radius.circular(10),
+                            ),
+                            color: const Color(0xff377785),
+                          ),
+                          children: [
+                            TableRow(children: [
+                              tableHeader("Name"),
+                              tableHeader("Designation"),
+                              tableHeader("Biomax Id"),
+                              tableHeader("Mobile"),
+                              tableHeader("Monthly Salary"),
+                              tableHeader("Advance Amount"),
+                              tableHeader("Action"),
+                            ]),
+                            ...List.generate(filteredList.length, (index) {
+                              final staff = filteredList[index];
+
+                              double dueAmount =
+                                  double.parse(staff['dueAmount']);
+
+                              return TableRow(children: [
+                                tableCell(staff['staffName']),
+                                tableCell(staff['degination']),
+                                tableCell(staff['biomaxId']),
+                                tableCell(staff['mobileNo']),
+                                tableCell(staff['monthlySalary']),
+                                tableCell("${dueAmount.abs()}"),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.receipt,
+                                    color: AppColor.primery,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PaymentScreen(
+                                            paymentVoucherNo: 0,
+                                            employeeData: {
+                                              'id': int.parse(staff['staffId']),
+                                              'name': staff['staffName'],
+                                              'monthlySalary':
+                                                  staff['monthlySalary'],
+                                              'dueSalary': 0,
+                                            }),
+                                      ),
+                                    );
+                                  },
+                                )
+                              ]);
+                            }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
           ],
         ),
       ),
