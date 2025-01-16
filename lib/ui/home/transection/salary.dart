@@ -1629,8 +1629,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
         employeeData['employeeCode'],
         "${employeeData['workingDays']}",
         "${employeeData['absentDays']}",
-        "₹ ${employeeData['monthlySalary'].toStringAsFixed(2)}",
-        "₹ ${employeeData['dueSalary'].toStringAsFixed(2)}",
+        "${employeeData['monthlySalary'].toStringAsFixed(2)}",
+        "${employeeData['dueSalary'].toStringAsFixed(2)}",
       ];
 
       // Add rowData to tableRows

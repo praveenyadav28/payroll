@@ -36,7 +36,6 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
       TextEditingController();
   final TextEditingController _bankAccountNumberController =
       TextEditingController();
-  final TextEditingController workingHourController = TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
   final TextEditingController _ifscNumberController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
@@ -49,32 +48,40 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
     text: DateFormat('yyyy/MM/dd')
         .format(DateTime.now().add(const Duration(days: 7))),
   );
-  TimeOfDay? _selectedTime;
+  TimeOfDay? fromTime;
+  TimeOfDay? toTime;
+  double workingHours = 0.0;
 
-  Future<void> _selectTime() async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime ??
-          TimeOfDay.now(), // Use previous selection as initial time
-    );
-
-    if (pickedTime != null && pickedTime != _selectedTime) {
-      setState(() {
-        _selectedTime = pickedTime;
-        _calculateDoubledTime();
-      });
-    }
+  TimeOfDay _parseTime(String timeStr) {
+    List<String> parts = timeStr.split(":");
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
-  double _calculateDoubledTime() {
-    if (_selectedTime == null) {
-      return 0.0; // Return 0 if no time is selected
-    }
-    workingHourController.text = '';
+  Future<TimeOfDay?> _selectTime(BuildContext context) async {
+    return await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+  }
 
-    double hours = _selectedTime!.hour.toDouble();
-    double minutes = _selectedTime!.minute.toDouble() / 60;
-    return hours + minutes;
+  void _calculateWorkingHours() {
+    if (fromTime != null && toTime != null) {
+      DateTime now = DateTime.now();
+      DateTime fromDateTime = DateTime(
+          now.year, now.month, now.day, fromTime!.hour, fromTime!.minute);
+      DateTime toDateTime =
+          DateTime(now.year, now.month, now.day, toTime!.hour, toTime!.minute);
+
+      if (toDateTime.isBefore(fromDateTime)) {
+        toDateTime =
+            toDateTime.add(Duration(days: 1)); // Handle overnight shifts
+      }
+
+      Duration diff = toDateTime.difference(fromDateTime);
+      workingHours = diff.inMinutes / 60.0;
+
+      setState(() {});
+    }
   }
 
   //State
@@ -103,35 +110,6 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
   List<Map<String, dynamic>> departmentList = [];
   int? departmentId;
 
-  String _convertedTime = '';
-
-  void _convertDoubleToTime() {
-    String input = workingHourController.text;
-    if (input.isEmpty) {
-      setState(() {
-        _convertedTime = '';
-      });
-      return;
-    }
-
-    try {
-      double inputDouble = double.parse(input);
-
-      int hours = inputDouble.floor();
-      double minutesDouble = (inputDouble - hours) * 60;
-      int minutes = minutesDouble.round();
-
-      setState(() {
-        _convertedTime =
-            '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
-      });
-    } catch (e) {
-      setState(() {
-        _convertedTime = 'Invalid input. Please enter a valid double value.';
-      });
-    }
-  }
-
   @override
   void initState() {
     fetchDistrict().then((value) => setState(() {}));
@@ -142,11 +120,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
         }));
     departmentData().then((value) => setState(() {
           departmentId = departmentList.first['id'];
-          widget.isNew
-              ? null
-              : fetchStaff().then((value) => setState(() {
-                    _convertDoubleToTime();
-                  }));
+          widget.isNew ? null : fetchStaff().then((value) => setState(() {}));
         }));
     _bankNameController.text = 'N/A';
 
@@ -621,27 +595,61 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                     labelText: 'Monthly Salary*',
                                     hintText: 'Monthly Salary',
                                   ),
-                                  dropdownTextfield(
-                                      context,
-                                      "Working Hours",
-                                      InkWell(
-                                        onTap: _selectTime,
-                                        child: Text(
-                                          _selectedTime == null
-                                              ? _convertedTime.isNotEmpty
-                                                  ? _convertedTime
-                                                  : _selectedTime
-                                                          ?.format(context) ??
-                                                      'Select Time'
-                                              : _selectedTime
-                                                      ?.format(context) ??
-                                                  'Select Time',
-                                          style: TextStyle(
-                                              color: AppColor.black,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500),
-                                        ),
-                                      )),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: dropdownTextfield(
+                                            context,
+                                            "From Time",
+                                            InkWell(
+                                              onTap: () async {
+                                                TimeOfDay? pickedTime =
+                                                    await _selectTime(context);
+                                                if (pickedTime != null) {
+                                                  setState(() =>
+                                                      fromTime = pickedTime);
+                                                }
+                                              },
+                                              child: Text(
+                                                fromTime == null
+                                                    ? "Select Start Time"
+                                                    : "Start Time: ${fromTime!.format(context)}",
+                                                style: TextStyle(
+                                                    color: AppColor.black,
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                            )),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: dropdownTextfield(
+                                            context,
+                                            "To Time",
+                                            InkWell(
+                                              onTap: () async {
+                                                TimeOfDay? pickedTime =
+                                                    await _selectTime(context);
+                                                if (pickedTime != null) {
+                                                  setState(() =>
+                                                      toTime = pickedTime);
+                                                }
+                                              },
+                                              child: Text(
+                                                toTime == null
+                                                    ? "Select End Time"
+                                                    : "End Time: ${toTime!.format(context)}",
+                                                style: TextStyle(
+                                                    color: AppColor.black,
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                            )),
+                                      ),
+                                    ],
+                                  ),
                                   CommonTextFormField(
                                     controller: _bankNameController,
                                     labelText: 'Bank Name',
@@ -680,11 +688,10 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                         .text.isEmpty) {
                                       showCustomSnackbar(context,
                                           'Please enter monthly salary');
-                                    } else if (workingHourController
-                                            .text.isEmpty &&
-                                        _selectedTime == null) {
+                                    } else if (fromTime == null ||
+                                        toTime == null) {
                                       showCustomSnackbar(context,
-                                          'Please enter working hours');
+                                          'Please select Start and End time');
                                     } else {
                                       postStaff();
                                     }
@@ -770,6 +777,13 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
 
 //Post Staff
   Future postStaff() async {
+    _calculateWorkingHours();
+    print('workingHours');
+    String fromTimeStr =
+        "${fromTime!.hour.toString().padLeft(2, '0')}:${fromTime!.minute.toString().padLeft(2, '0')}";
+    String toTimeStr =
+        "${toTime!.hour.toString().padLeft(2, '0')}:${toTime!.minute.toString().padLeft(2, '0')}";
+
     var response = await ApiService.postData(
         widget.isNew
             ? 'MasterPayroll/PostStaffPayroll'
@@ -799,11 +813,9 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
           "BankName": _bankNameController.text.trim().toString(),
           "BankAccountNo": _bankAccountNumberController.text.trim().toString(),
           "BankIFSC": _ifscNumberController.text.trim().toString(),
-          "Other1": workingHourController.text.trim().isNotEmpty
-              ? workingHourController.text.trim().toString()
-              : _calculateDoubledTime().toStringAsFixed(2),
-          "Other2": "Other2",
-          "Other3": "Other3",
+          "Other1": workingHours.toString(),
+          "Other2": fromTimeStr,
+          "Other3": toTimeStr,
           "Other4": "Other4",
           "Other5": "Other5"
         });
@@ -837,6 +849,8 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
     departmentId = response[0]['staff_Department_Id'];
     dobDatePicker.text = response[0]['dob_Date'];
     joingDatePicker.text = response[0]['joining_Date'];
-    workingHourController.text = response[0]['other1'];
+    workingHours = double.parse(response[0]['other1']);
+    fromTime = _parseTime(response[0]['other2']);
+    toTime = _parseTime(response[0]['other3']);
   }
 }
