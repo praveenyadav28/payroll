@@ -104,14 +104,15 @@ import 'package:payroll/ui/home/transection/salaryModel.dart';
 //Working Hour Without Sandwich
 class WorkingHoursCalculator {
   Map<String, dynamic> calculate(
-    List<Employee> employees,
-    List<DeviceLog> logs,
-    List<String> publicHolidays,
-    int daysInMonth,
-    int salaryYear,
-    int salaryMonth,
-    int absentDaysCalculate,
-  ) {
+      List<Employee> employees,
+      List<DeviceLog> logs,
+      List<String> publicHolidays,
+      int daysInMonth,
+      int salaryYear,
+      int salaryMonth,
+      int absentDaysCalculate,
+      DateTime? excludeStartDate,
+      DateTime? excludeEndDate) {
     Map<String, dynamic> result = {};
 
     // Convert public holidays to DateTime
@@ -119,7 +120,15 @@ class WorkingHoursCalculator {
         publicHolidays.map((holiday) => DateTime.parse(holiday)).toList();
 
     for (var employee in employees) {
-      List<DeviceLog> employeeLogs = logs
+      List<DeviceLog> unignoredLogs = logs
+          .where((log) =>
+              excludeStartDate != null &&
+              excludeEndDate != null &&
+              (log.punchTime.isBefore(excludeStartDate) ||
+                  log.punchTime.isAfter(excludeEndDate)))
+          .toList();
+
+      List<DeviceLog> employeeLogs = unignoredLogs
           .where((log) =>
               log.employeeCode == employee.employeeCode &&
               log.serialNumber == Preference.getString(PrefKeys.coludId))
@@ -239,6 +248,7 @@ class WorkingHoursCalculator {
   }
 }
 
+//Working hours of shifts
 class WorkingShiftCalculator {
   Map<String, dynamic> calculate(
     List<Employee> employees,

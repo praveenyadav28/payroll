@@ -1,6 +1,9 @@
 // ignore_for_file: unnecessary_null_comparison
 
 import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:payroll/components/api.dart';
+import 'package:payroll/utils/snackbar.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -40,6 +43,10 @@ class _AttendenceState extends State<Attendence> {
   final DateFormat formatter = DateFormat('yyyy-MM-dd');
   List<String> selectedPublicHolidays = [];
   String selectedMonth = 'January';
+  DateTime _startDate =
+      DateTime.now().add(const Duration(days: 1)); // Default: 1 day ahead
+  DateTime _endDate =
+      DateTime.now().add(const Duration(days: 1)); // Default: 1 day ahead
 
   @override
   void initState() {
@@ -52,7 +59,9 @@ class _AttendenceState extends State<Attendence> {
             "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
         : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
 
-    fetchData();
+    fatchDate().then((value) => setState(() {
+          fetchData();
+        }));
   }
 
   int absentDaysCalculation(String fromDateText, String toDateText) {
@@ -121,13 +130,16 @@ class _AttendenceState extends State<Attendence> {
           absentDaysCalculate);
       WorkingHoursCalculator calculator0 = WorkingHoursCalculator();
       Map<String, dynamic> data0 = calculator0.calculate(
-          employees,
-          logs,
-          selectedPublicHolidays,
-          daysInMonth,
-          int.parse(yearController.text.toString()),
-          monthInt[selectedMonth]!,
-          absentDaysCalculate);
+        employees,
+        logs,
+        selectedPublicHolidays,
+        daysInMonth,
+        int.parse(yearController.text.toString()),
+        monthInt[selectedMonth]!,
+        absentDaysCalculate,
+        _startDate,
+        _endDate.add(const Duration(days: 1)),
+      );
 
       setState(() {
         workingHoursData = Preference.getString(PrefKeys.calculationType) == '1'
@@ -159,758 +171,850 @@ class _AttendenceState extends State<Attendence> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance Screen'),
-        flexibleSpace: const OutsideContainer(child: Column()),
-        centerTitle: true,
-        actions: [
-          IconButton(
-              onPressed: () {
-                logoutPrefData();
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-              icon: const Icon(
-                Icons.logout,
-                color: Colors.red,
-              )),
-          const Text(
-            "Logout  ",
-            style: TextStyle(color: Colors.red),
-          ),
-        ],
-      ),
-      backgroundColor: AppColor.white,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-            horizontal: Sizes.width * 0.02, vertical: Sizes.height * 0.02),
-        child: Column(
-          children: [
-            if (Sizes.width < 800)
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: Sizes.width * 0.03,
-                    vertical: Sizes.height * 0.02),
-                alignment: Alignment.topCenter,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: const Color(0xff377785),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    ExpansionTile(
-                      tilePadding: EdgeInsets.zero,
-                      title: Text(
-                        "Select Public Holidays",
-                        style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w500,
-                            color: AppColor.black),
-                      ),
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TableCalendar(
-                            firstDay: DateTime.utc(1920, 1, 1),
-                            lastDay: DateTime.utc(2330, 12, 31),
-                            weekendDays: const [DateTime.sunday],
-                            focusedDay: focusedDay,
-                            selectedDayPredicate: (day) {
-                              return selectedDates.contains(day);
-                            },
-                            onDaySelected: (selectedDay, newFocusedDay) {
-                              setState(() {
-                                focusedDay = newFocusedDay;
+  void _handleKeyPress(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.keyD &&
+          event.isControlPressed &&
+          event.isAltPressed) {
+        _showDialog();
+      }
+    }
+  }
 
-                                if (selectedDates.contains(selectedDay)) {
-                                  selectedDates.remove(selectedDay);
-                                  selectedPublicHolidays
-                                      .remove(formatter.format(selectedDay));
-                                } else {
-                                  selectedDates.add(selectedDay);
-                                  selectedPublicHolidays
-                                      .add(formatter.format(selectedDay));
-                                }
-                              });
-                            },
-                            headerStyle: const HeaderStyle(
-                              formatButtonVisible: false,
-                              titleCentered: true,
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide()),
-                              ),
-                              titleTextStyle: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            calendarStyle: const CalendarStyle(
-                              selectedDecoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0xff4EB1C6),
-                                      Color(0xff56C891)
-                                    ]),
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              todayTextStyle: TextStyle(color: Colors.black),
-                              weekendTextStyle:
-                                  TextStyle(color: Colors.redAccent),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: Sizes.height * 0.02),
-                        ElevatedButton(
-                            child: const Text("Clear public holidays"),
-                            onPressed: () {
-                              setState(() {
-                                selectedDates.clear();
-                                selectedPublicHolidays.clear();
-                              });
-                            }),
-                      ],
-                    ),
-                    SizedBox(height: Sizes.height * 0.02),
-                    Row(
-                      children: [
-                        Expanded(
-                            child: CommonTextFormField(
-                          controller: yearController,
-                          labelText: "Year",
-                        )),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: dropdownTextfield(
-                              context,
-                              "Select Month",
-                              DropdownButton<String>(
-                                underline: Container(),
-                                isExpanded: true,
-                                icon: const Icon(
-                                    Icons.keyboard_arrow_down_outlined),
-                                value: selectedMonth,
-                                items: monthDays.keys.map((String month) {
-                                  return DropdownMenuItem<String>(
-                                    value: month,
-                                    child: Text(month),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedMonth = value!;
-                                    fromDate.text =
-                                        "${yearController.text}/${monthInt[selectedMonth]!}/01";
-                                    toDate.text = Preference.getString(
-                                                PrefKeys.calculationType) ==
-                                            '1'
-                                        ? toDate.text =
-                                            "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
-                                        : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
-                                  });
-                                },
-                              )),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: Sizes.height * 0.02),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: dropdownTextfield(
-                            context,
-                            "From Date",
-                            InkWell(
-                              onTap: () async {
-                                FocusScope.of(context)
-                                    .requestFocus(FocusNode());
-                                await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime(2500),
-                                ).then((selectedDate) {
-                                  if (selectedDate != null) {
-                                    fromDate.text = DateFormat('yyyy/MM/dd')
-                                        .format(selectedDate);
-                                  }
-                                });
-                              },
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    fromDate.text,
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColor.black),
-                                  ),
-                                  Icon(Icons.edit_calendar,
-                                      color: AppColor.black)
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: dropdownTextfield(
-                            context,
-                            "To Date",
-                            InkWell(
-                              onTap: () async {
-                                FocusScope.of(context)
-                                    .requestFocus(FocusNode());
-                                await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime(2500),
-                                ).then((selectedDate) {
-                                  if (selectedDate != null) {
-                                    toDate.text = DateFormat('yyyy/MM/dd')
-                                        .format(selectedDate);
-                                  }
-                                });
-                              },
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    toDate.text,
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColor.black),
-                                  ),
-                                  Icon(Icons.edit_calendar,
-                                      color: AppColor.black)
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: Sizes.height * 0.02),
-                    CustomButton(
-                        width: double.infinity,
-                        height: 50,
-                        text: "Submit",
-                        press: () {
-                          setState(() {
-                            fetchData();
-                          });
-                        })
-                  ],
-                ),
-              )
-            else
-              Row(
+  Future<void> _pickDate(BuildContext context, bool isStartDate) async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate ? _startDate : _endDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  void _showDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Use StatefulBuilder for UI updates
+            return AlertDialog(
+              title: const Text("Select Dates"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TableCalendar(
-                            firstDay: DateTime.utc(1920, 1, 1),
-                            lastDay: DateTime.utc(2330, 12, 31),
-                            weekendDays: const [DateTime.sunday],
-                            focusedDay: focusedDay,
-                            selectedDayPredicate: (day) {
-                              return selectedDates.contains(day);
-                            },
-                            onDaySelected: (selectedDay, newFocusedDay) {
-                              setState(() {
-                                focusedDay = newFocusedDay;
-
-                                if (selectedDates.contains(selectedDay)) {
-                                  selectedDates.remove(selectedDay);
-                                  selectedPublicHolidays
-                                      .remove(formatter.format(selectedDay));
-                                } else {
-                                  selectedDates.add(selectedDay);
-                                  selectedPublicHolidays
-                                      .add(formatter.format(selectedDay));
-                                }
-                              });
-                            },
-                            headerStyle: const HeaderStyle(
-                              formatButtonVisible: false,
-                              titleCentered: true,
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide()),
-                              ),
-                              titleTextStyle: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            calendarStyle: const CalendarStyle(
-                              selectedDecoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0xff4EB1C6),
-                                      Color(0xff56C891)
-                                    ]),
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              todayTextStyle: TextStyle(color: Colors.black),
-                              weekendTextStyle:
-                                  TextStyle(color: Colors.redAccent),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: Sizes.height * 0.02),
-                        ElevatedButton(
-                            child: const Text("Clear public holidays"),
-                            onPressed: () {
-                              setState(() {
-                                selectedDates.clear();
-                                selectedPublicHolidays.clear();
-                              });
-                            }),
-                      ],
-                    ),
+                  ListTile(
+                    title: Text("${_startDate.toLocal()}".split(' ')[0]),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () {
+                      _pickDate(context, true).then((_) {
+                        setState(() {}); // Updates only the dialog UI
+                      });
+                    },
                   ),
-                  SizedBox(width: Sizes.width * 0.02),
-                  Expanded(
-                      flex: 1,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                  child: CommonTextFormField(
-                                controller: yearController,
-                                labelText: "Year",
-                              )),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: dropdownTextfield(
-                                    context,
-                                    "Select Month",
-                                    DropdownButton<String>(
-                                      underline: Container(),
-                                      isExpanded: true,
-                                      icon: const Icon(
-                                          Icons.keyboard_arrow_down_outlined),
-                                      value: selectedMonth,
-                                      items: monthDays.keys.map((String month) {
-                                        return DropdownMenuItem<String>(
-                                          value: month,
-                                          child: Text(month),
-                                        );
-                                      }).toList(),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedMonth = value!;
-                                          fromDate.text =
-                                              "${yearController.text}/${monthInt[selectedMonth]!}/01";
-                                          toDate.text = Preference.getString(
-                                                      PrefKeys
-                                                          .calculationType) ==
-                                                  '1'
-                                              ? toDate.text =
-                                                  "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
-                                              : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
-                                        });
-                                      },
-                                    )),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: Sizes.height * 0.02),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: dropdownTextfield(
-                                  context,
-                                  "From Date",
-                                  InkWell(
-                                    onTap: () async {
-                                      FocusScope.of(context)
-                                          .requestFocus(FocusNode());
-                                      await showDatePicker(
-                                        context: context,
-                                        initialDate: DateTime.now(),
-                                        firstDate: DateTime(1900),
-                                        lastDate: DateTime(2500),
-                                      ).then((selectedDate) {
-                                        if (selectedDate != null) {
-                                          fromDate.text =
-                                              DateFormat('yyyy/MM/dd')
-                                                  .format(selectedDate);
-                                        }
-                                      });
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          fromDate.text,
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColor.black),
-                                        ),
-                                        Icon(Icons.edit_calendar,
-                                            color: AppColor.black)
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: dropdownTextfield(
-                                  context,
-                                  "To Date",
-                                  InkWell(
-                                    onTap: () async {
-                                      FocusScope.of(context)
-                                          .requestFocus(FocusNode());
-                                      await showDatePicker(
-                                        context: context,
-                                        initialDate: DateTime.now(),
-                                        firstDate: DateTime(1900),
-                                        lastDate: DateTime(2500),
-                                      ).then((selectedDate) {
-                                        if (selectedDate != null) {
-                                          toDate.text = DateFormat('yyyy/MM/dd')
-                                              .format(selectedDate);
-                                        }
-                                      });
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          toDate.text,
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColor.black),
-                                        ),
-                                        Icon(Icons.edit_calendar,
-                                            color: AppColor.black)
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: Sizes.height * 0.02),
-                          CustomButton(
-                              width: double.infinity,
-                              height: 50,
-                              text: "Submit",
-                              press: () {
-                                setState(() {
-                                  fetchData();
-                                });
-                              })
-                        ],
-                      )),
+                  ListTile(
+                    title: Text("${_endDate.toLocal()}".split(' ')[0]),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () {
+                      _pickDate(context, false).then((_) {
+                        setState(() {}); // Updates only the dialog UI
+                      });
+                    },
+                  ),
                 ],
               ),
-            SizedBox(height: Sizes.height * 0.02),
-            workingHoursData == null
-                ? Container()
-                : Sizes.width < 800
-                    ? Container()
-                    : Container(
-                        alignment: Alignment.topCenter,
-                        width: Sizes.width * 1,
-                        height: 50,
-                        decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(10),
-                                topRight: Radius.circular(10)),
-                            border: Border.all(
-                              color: const Color(0xff377785),
-                            ),
-                            gradient: const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0xff4EB1C6),
-                                  Color(0xff56C891)
-                                ])),
-                        child: Stack(
-                          alignment: Alignment.centerRight,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.file_download_outlined,
-                                  color: AppColor.white),
-                              onPressed: () async {
-                                await generatePDF();
-                              },
-                            ),
-                            Center(
-                                child: Text(
-                              "Staff List",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppColor.black,
-                                  fontWeight: FontWeight.bold),
-                            )),
-                          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColor.red),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    postDate();
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RawKeyboardListener(
+      focusNode: FocusNode(),
+      autofocus: true,
+      onKey: _handleKeyPress,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Attendance Screen'),
+          flexibleSpace: const OutsideContainer(child: Column()),
+          centerTitle: true,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  logoutPrefData();
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                )),
+            const Text(
+              "Logout  ",
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        backgroundColor: AppColor.white,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+              horizontal: Sizes.width * 0.02, vertical: Sizes.height * 0.02),
+          child: Column(
+            children: [
+              if (Sizes.width < 800)
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: Sizes.width * 0.03,
+                      vertical: Sizes.height * 0.02),
+                  alignment: Alignment.topCenter,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xff377785),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: Text(
+                          "Select Public Holidays",
+                          style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                              color: AppColor.black),
                         ),
-                      ),
-            workingHoursData == null
-                ? Container()
-                : Sizes.width < 800
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                            CircleAvatar(
-                              backgroundColor: AppColor.primery,
-                              child: IconButton(
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: TableCalendar(
+                              firstDay: DateTime.utc(1920, 1, 1),
+                              lastDay: DateTime.utc(2330, 12, 31),
+                              weekendDays: const [DateTime.sunday],
+                              focusedDay: focusedDay,
+                              selectedDayPredicate: (day) {
+                                return selectedDates.contains(day);
+                              },
+                              onDaySelected: (selectedDay, newFocusedDay) {
+                                setState(() {
+                                  focusedDay = newFocusedDay;
+
+                                  if (selectedDates.contains(selectedDay)) {
+                                    selectedDates.remove(selectedDay);
+                                    selectedPublicHolidays
+                                        .remove(formatter.format(selectedDay));
+                                  } else {
+                                    selectedDates.add(selectedDay);
+                                    selectedPublicHolidays
+                                        .add(formatter.format(selectedDay));
+                                  }
+                                });
+                              },
+                              headerStyle: const HeaderStyle(
+                                formatButtonVisible: false,
+                                titleCentered: true,
+                                decoration: BoxDecoration(
+                                  border: Border(bottom: BorderSide()),
+                                ),
+                                titleTextStyle: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              calendarStyle: const CalendarStyle(
+                                selectedDecoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xff4EB1C6),
+                                        Color(0xff56C891)
+                                      ]),
+                                  shape: BoxShape.circle,
+                                ),
+                                todayDecoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  shape: BoxShape.circle,
+                                ),
+                                todayTextStyle: TextStyle(color: Colors.black),
+                                weekendTextStyle:
+                                    TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Sizes.height * 0.02),
+                          ElevatedButton(
+                              child: const Text("Clear public holidays"),
+                              onPressed: () {
+                                setState(() {
+                                  selectedDates.clear();
+                                  selectedPublicHolidays.clear();
+                                });
+                              }),
+                        ],
+                      ),
+                      SizedBox(height: Sizes.height * 0.02),
+                      Row(
+                        children: [
+                          Expanded(
+                              child: CommonTextFormField(
+                            controller: yearController,
+                            labelText: "Year",
+                          )),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: dropdownTextfield(
+                                context,
+                                "Select Month",
+                                DropdownButton<String>(
+                                  underline: Container(),
+                                  isExpanded: true,
+                                  icon: const Icon(
+                                      Icons.keyboard_arrow_down_outlined),
+                                  value: selectedMonth,
+                                  items: monthDays.keys.map((String month) {
+                                    return DropdownMenuItem<String>(
+                                      value: month,
+                                      child: Text(month),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedMonth = value!;
+                                      fromDate.text =
+                                          "${yearController.text}/${monthInt[selectedMonth]!}/01";
+                                      toDate.text = Preference.getString(
+                                                  PrefKeys.calculationType) ==
+                                              '1'
+                                          ? toDate.text =
+                                              "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
+                                          : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
+                                    });
+                                  },
+                                )),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: Sizes.height * 0.02),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: dropdownTextfield(
+                              context,
+                              "From Date",
+                              InkWell(
+                                onTap: () async {
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
+                                  await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(1900),
+                                    lastDate: DateTime(2500),
+                                  ).then((selectedDate) {
+                                    if (selectedDate != null) {
+                                      fromDate.text = DateFormat('yyyy/MM/dd')
+                                          .format(selectedDate);
+                                    }
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      fromDate.text,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColor.black),
+                                    ),
+                                    Icon(Icons.edit_calendar,
+                                        color: AppColor.black)
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: dropdownTextfield(
+                              context,
+                              "To Date",
+                              InkWell(
+                                onTap: () async {
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
+                                  await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(1900),
+                                    lastDate: DateTime(2500),
+                                  ).then((selectedDate) {
+                                    if (selectedDate != null) {
+                                      toDate.text = DateFormat('yyyy/MM/dd')
+                                          .format(selectedDate);
+                                    }
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      toDate.text,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColor.black),
+                                    ),
+                                    Icon(Icons.edit_calendar,
+                                        color: AppColor.black)
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: Sizes.height * 0.02),
+                      CustomButton(
+                          width: double.infinity,
+                          height: 50,
+                          text: "Submit",
+                          press: () {
+                            setState(() {
+                              fetchData();
+                            });
+                          })
+                    ],
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: TableCalendar(
+                              firstDay: DateTime.utc(1920, 1, 1),
+                              lastDay: DateTime.utc(2330, 12, 31),
+                              weekendDays: const [DateTime.sunday],
+                              focusedDay: focusedDay,
+                              selectedDayPredicate: (day) {
+                                return selectedDates.contains(day);
+                              },
+                              onDaySelected: (selectedDay, newFocusedDay) {
+                                setState(() {
+                                  focusedDay = newFocusedDay;
+
+                                  if (selectedDates.contains(selectedDay)) {
+                                    selectedDates.remove(selectedDay);
+                                    selectedPublicHolidays
+                                        .remove(formatter.format(selectedDay));
+                                  } else {
+                                    selectedDates.add(selectedDay);
+                                    selectedPublicHolidays
+                                        .add(formatter.format(selectedDay));
+                                  }
+                                });
+                              },
+                              headerStyle: const HeaderStyle(
+                                formatButtonVisible: false,
+                                titleCentered: true,
+                                decoration: BoxDecoration(
+                                  border: Border(bottom: BorderSide()),
+                                ),
+                                titleTextStyle: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              calendarStyle: const CalendarStyle(
+                                selectedDecoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xff4EB1C6),
+                                        Color(0xff56C891)
+                                      ]),
+                                  shape: BoxShape.circle,
+                                ),
+                                todayDecoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  shape: BoxShape.circle,
+                                ),
+                                todayTextStyle: TextStyle(color: Colors.black),
+                                weekendTextStyle:
+                                    TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: Sizes.height * 0.02),
+                          ElevatedButton(
+                              child: const Text("Clear public holidays"),
+                              onPressed: () {
+                                setState(() {
+                                  selectedDates.clear();
+                                  selectedPublicHolidays.clear();
+                                });
+                              }),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: Sizes.width * 0.02),
+                    Expanded(
+                        flex: 1,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                    child: CommonTextFormField(
+                                  controller: yearController,
+                                  labelText: "Year",
+                                )),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: dropdownTextfield(
+                                      context,
+                                      "Select Month",
+                                      DropdownButton<String>(
+                                        underline: Container(),
+                                        isExpanded: true,
+                                        icon: const Icon(
+                                            Icons.keyboard_arrow_down_outlined),
+                                        value: selectedMonth,
+                                        items:
+                                            monthDays.keys.map((String month) {
+                                          return DropdownMenuItem<String>(
+                                            value: month,
+                                            child: Text(month),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedMonth = value!;
+                                            fromDate.text =
+                                                "${yearController.text}/${monthInt[selectedMonth]!}/01";
+                                            toDate.text = Preference.getString(
+                                                        PrefKeys
+                                                            .calculationType) ==
+                                                    '1'
+                                                ? toDate.text =
+                                                    "${selectedMonth == "December" ? int.parse(yearController.text.trim()) + 1 : yearController.text}/${selectedMonth == "December" ? 1 : monthInt[selectedMonth]! + 1}/01"
+                                                : "${yearController.text}/${monthInt[selectedMonth]!}/${(selectedMonth == 'February' && isLeapYear(int.parse(yearController.text.toString()))) ? 29 : monthDays[selectedMonth]!}";
+                                          });
+                                        },
+                                      )),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: Sizes.height * 0.02),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: dropdownTextfield(
+                                    context,
+                                    "From Date",
+                                    InkWell(
+                                      onTap: () async {
+                                        FocusScope.of(context)
+                                            .requestFocus(FocusNode());
+                                        await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(1900),
+                                          lastDate: DateTime(2500),
+                                        ).then((selectedDate) {
+                                          if (selectedDate != null) {
+                                            fromDate.text =
+                                                DateFormat('yyyy/MM/dd')
+                                                    .format(selectedDate);
+                                          }
+                                        });
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            fromDate.text,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColor.black),
+                                          ),
+                                          Icon(Icons.edit_calendar,
+                                              color: AppColor.black)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: dropdownTextfield(
+                                    context,
+                                    "To Date",
+                                    InkWell(
+                                      onTap: () async {
+                                        FocusScope.of(context)
+                                            .requestFocus(FocusNode());
+                                        await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(1900),
+                                          lastDate: DateTime(2500),
+                                        ).then((selectedDate) {
+                                          if (selectedDate != null) {
+                                            toDate.text =
+                                                DateFormat('yyyy/MM/dd')
+                                                    .format(selectedDate);
+                                          }
+                                        });
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            toDate.text,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColor.black),
+                                          ),
+                                          Icon(Icons.edit_calendar,
+                                              color: AppColor.black)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: Sizes.height * 0.02),
+                            CustomButton(
+                                width: double.infinity,
+                                height: 50,
+                                text: "Submit",
+                                press: () {
+                                  setState(() {
+                                    fetchData();
+                                  });
+                                })
+                          ],
+                        )),
+                  ],
+                ),
+              SizedBox(height: Sizes.height * 0.02),
+              workingHoursData == null
+                  ? Container()
+                  : Sizes.width < 800
+                      ? Container()
+                      : Container(
+                          alignment: Alignment.topCenter,
+                          width: Sizes.width * 1,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10)),
+                              border: Border.all(
+                                color: const Color(0xff377785),
+                              ),
+                              gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0xff4EB1C6),
+                                    Color(0xff56C891)
+                                  ])),
+                          child: Stack(
+                            alignment: Alignment.centerRight,
+                            children: [
+                              IconButton(
                                 icon: Icon(Icons.file_download_outlined,
                                     color: AppColor.white),
                                 onPressed: () async {
                                   await generatePDF();
                                 },
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            ...List.generate(workingHoursData!.length, (index) {
-                              String employeeCode =
-                                  workingHoursData!.keys.elementAt(index);
-                              var employeeData =
-                                  workingHoursData![employeeCode];
-                              return Container(
-                                margin: EdgeInsets.only(
-                                    bottom: Sizes.height * 0.02),
-                                alignment: Alignment.topCenter,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xff377785),
-                                  ),
+                              Center(
+                                  child: Text(
+                                "Staff List",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: AppColor.black,
+                                    fontWeight: FontWeight.bold),
+                              )),
+                            ],
+                          ),
+                        ),
+              workingHoursData == null
+                  ? Container()
+                  : Sizes.width < 800
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                              CircleAvatar(
+                                backgroundColor: AppColor.primery,
+                                child: IconButton(
+                                  icon: Icon(Icons.file_download_outlined,
+                                      color: AppColor.white),
+                                  onPressed: () async {
+                                    await generatePDF();
+                                  },
                                 ),
-                                child: Column(
-                                  children: [
-                                    ListTile(
-                                        leading: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 2, horizontal: 7.5),
-                                          margin:
-                                              const EdgeInsets.only(right: 10),
-                                          decoration: BoxDecoration(
-                                              color: AppColor.primery,
-                                              borderRadius:
-                                                  BorderRadius.circular(30)),
-                                          child: Text(
-                                            "${employeeData['employeeCode']}",
+                              ),
+                              const SizedBox(height: 10),
+                              ...List.generate(workingHoursData!.length,
+                                  (index) {
+                                String employeeCode =
+                                    workingHoursData!.keys.elementAt(index);
+                                var employeeData =
+                                    workingHoursData![employeeCode];
+                                return Container(
+                                  margin: EdgeInsets.only(
+                                      bottom: Sizes.height * 0.02),
+                                  alignment: Alignment.topCenter,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xff377785),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                          leading: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 2, horizontal: 7.5),
+                                            margin: const EdgeInsets.only(
+                                                right: 10),
+                                            decoration: BoxDecoration(
+                                                color: AppColor.primery,
+                                                borderRadius:
+                                                    BorderRadius.circular(30)),
+                                            child: Text(
+                                              "${employeeData['employeeCode']}",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColor.white,
+                                              ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            employeeData['name'],
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w500,
-                                              color: AppColor.white,
+                                              color: AppColor.black,
                                             ),
                                           ),
-                                        ),
+                                          trailing: IconButton(
+                                            icon: Icon(Icons.visibility,
+                                                color: AppColor.primery),
+                                            onPressed: () {
+                                              Preference.getString(PrefKeys
+                                                          .calculationType) ==
+                                                      '1'
+                                                  ? showShiftLog(employeeData[
+                                                      'dailyPunchLogInfo'])
+                                                  : showActivityLog(
+                                                      employeeData[
+                                                          'dailyPunchLogInfo'],
+                                                      employeeData[
+                                                          'employeeWorkingHours']);
+                                            },
+                                          )),
+                                      ExpansionTile(
                                         title: Text(
-                                          employeeData['name'],
+                                          'Other Details',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 18,
                                             fontWeight: FontWeight.w500,
                                             color: AppColor.black,
                                           ),
                                         ),
-                                        trailing: IconButton(
-                                          icon: Icon(Icons.visibility,
-                                              color: AppColor.primery),
-                                          onPressed: () {
+                                        children: [
+                                          datastylerow("Working Days",
+                                              '${employeeData['workingDays']} Days'),
+                                          datastylerow("Absent Days",
+                                              '${employeeData['absentDays']} Days'),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                );
+                              })
+                            ])
+                      : SizedBox(
+                          width: Sizes.width * 1,
+                          child: Table(
+                            border: TableBorder.all(
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                                color: const Color(0xff377785)),
+                            children: [
+                              TableRow(children: [
+                                SizedBox(
+                                    height: Sizes.height * 0.05,
+                                    child: Center(
+                                        child: Text(
+                                      "Name",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold),
+                                    ))),
+                                SizedBox(
+                                    height: Sizes.height * 0.05,
+                                    child: Center(
+                                        child: Text(
+                                      "Biomax Id",
+                                      style: TextStyle(
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.bold),
+                                    ))),
+                                SizedBox(
+                                    height: Sizes.height * 0.05,
+                                    child: Center(
+                                        child: Text(
                                             Preference.getString(PrefKeys
                                                         .calculationType) ==
                                                     '1'
-                                                ? showShiftLog(employeeData[
-                                                    'dailyPunchLogInfo'])
-                                                : showActivityLog(
-                                                    employeeData[
-                                                        'dailyPunchLogInfo'],
-                                                    employeeData[
-                                                        'employeeWorkingHours']);
-                                          },
-                                        )),
-                                    ExpansionTile(
-                                      title: Text(
-                                        'Other Details',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColor.black,
-                                        ),
-                                      ),
-                                      children: [
-                                        datastylerow("Working Days",
-                                            '${employeeData['workingDays']} Days'),
-                                        datastylerow("Absent Days",
-                                            '${employeeData['absentDays']} Days'),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              );
-                            })
-                          ])
-                    : SizedBox(
-                        width: Sizes.width * 1,
-                        child: Table(
-                          border: TableBorder.all(
-                              borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(10),
-                                  bottomRight: Radius.circular(10)),
-                              color: const Color(0xff377785)),
-                          children: [
-                            TableRow(children: [
-                              SizedBox(
-                                  height: Sizes.height * 0.05,
-                                  child: Center(
-                                      child: Text(
-                                    "Name",
-                                    style: TextStyle(
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.bold),
-                                  ))),
-                              SizedBox(
-                                  height: Sizes.height * 0.05,
-                                  child: Center(
-                                      child: Text(
-                                    "Biomax Id",
-                                    style: TextStyle(
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.bold),
-                                  ))),
-                              SizedBox(
-                                  height: Sizes.height * 0.05,
-                                  child: Center(
-                                      child: Text(
-                                          Preference.getString(PrefKeys
-                                                      .calculationType) ==
-                                                  '1'
-                                              ? 'Working Shift'
-                                              : "Working Days",
-                                          style: TextStyle(
-                                              color: AppColor.black,
-                                              fontWeight: FontWeight.bold)))),
-                              SizedBox(
-                                  height: Sizes.height * 0.05,
-                                  child: Center(
-                                      child: Text(
-                                          Preference.getString(PrefKeys
-                                                      .calculationType) ==
-                                                  '1'
-                                              ? 'Absent Shift'
-                                              : 'Absent Days',
-                                          style: TextStyle(
-                                              color: AppColor.black,
-                                              fontWeight: FontWeight.bold)))),
-                              SizedBox(
-                                  height: Sizes.height * 0.05,
-                                  child: Center(
-                                      child: Text("Action",
-                                          style: TextStyle(
-                                              color: AppColor.black,
-                                              fontWeight: FontWeight.bold)))),
-                            ]),
-                            ...List.generate(workingHoursData!.length, (index) {
-                              String employeeCode =
-                                  workingHoursData!.keys.elementAt(index);
-                              var employeeData =
-                                  workingHoursData![employeeCode];
+                                                ? 'Working Shift'
+                                                : "Working Days",
+                                            style: TextStyle(
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.bold)))),
+                                SizedBox(
+                                    height: Sizes.height * 0.05,
+                                    child: Center(
+                                        child: Text(
+                                            Preference.getString(PrefKeys
+                                                        .calculationType) ==
+                                                    '1'
+                                                ? 'Absent Shift'
+                                                : 'Absent Days',
+                                            style: TextStyle(
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.bold)))),
+                                SizedBox(
+                                    height: Sizes.height * 0.05,
+                                    child: Center(
+                                        child: Text("Action",
+                                            style: TextStyle(
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.bold)))),
+                              ]),
+                              ...List.generate(workingHoursData!.length,
+                                  (index) {
+                                String employeeCode =
+                                    workingHoursData!.keys.elementAt(index);
+                                var employeeData =
+                                    workingHoursData![employeeCode];
 
-                              return TableRow(children: [
-                                SizedBox(
-                                    height: Sizes.height * 0.07,
-                                    child: Center(
-                                        child: Text(employeeData['name'],
-                                            style: TextStyle(
-                                                color: AppColor.black)))),
-                                SizedBox(
-                                    height: Sizes.height * 0.07,
-                                    child: Center(
-                                        child: Text(
-                                            employeeData['employeeCode'],
-                                            style: TextStyle(
-                                                color: AppColor.black)))),
-                                SizedBox(
-                                    height: Sizes.height * 0.07,
-                                    child: Center(
-                                        child: Text(
-                                            "${employeeData['workingDays']}",
-                                            style: TextStyle(
-                                                color: AppColor.black)))),
-                                SizedBox(
-                                    height: Sizes.height * 0.07,
-                                    child: Center(
-                                        child: Text(
-                                            "${employeeData['absentDays']}",
-                                            style: TextStyle(
-                                                color: AppColor.black)))),
-                                SizedBox(
-                                    height: Sizes.height * 0.07,
-                                    child: IconButton(
-                                      icon: Icon(Icons.visibility,
-                                          color: AppColor.primery),
-                                      onPressed: () {
-                                        Preference.getString(
-                                                    PrefKeys.calculationType) ==
-                                                '1'
-                                            ? showShiftLog(employeeData[
-                                                'dailyPunchLogInfo'])
-                                            : showActivityLog(
-                                                employeeData[
-                                                    'dailyPunchLogInfo'],
-                                                employeeData[
-                                                    'employeeWorkingHours']);
-                                      },
-                                    )),
-                              ]);
-                            })
-                          ],
-                        ),
-                      )
-          ],
+                                return TableRow(children: [
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: Center(
+                                          child: Text(employeeData['name'],
+                                              style: TextStyle(
+                                                  color: AppColor.black)))),
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: Center(
+                                          child: Text(
+                                              employeeData['employeeCode'],
+                                              style: TextStyle(
+                                                  color: AppColor.black)))),
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: Center(
+                                          child: Text(
+                                              "${employeeData['workingDays']}",
+                                              style: TextStyle(
+                                                  color: AppColor.black)))),
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: Center(
+                                          child: Text(
+                                              "${employeeData['absentDays']}",
+                                              style: TextStyle(
+                                                  color: AppColor.black)))),
+                                  SizedBox(
+                                      height: Sizes.height * 0.07,
+                                      child: IconButton(
+                                        icon: Icon(Icons.visibility,
+                                            color: AppColor.primery),
+                                        onPressed: () {
+                                          Preference.getString(PrefKeys
+                                                      .calculationType) ==
+                                                  '1'
+                                              ? showShiftLog(employeeData[
+                                                  'dailyPunchLogInfo'])
+                                              : showActivityLog(
+                                                  employeeData[
+                                                      'dailyPunchLogInfo'],
+                                                  employeeData[
+                                                      'employeeWorkingHours']);
+                                        },
+                                      )),
+                                ]);
+                              })
+                            ],
+                          ),
+                        )
+            ],
+          ),
         ),
       ),
     );
@@ -1240,6 +1344,38 @@ class _AttendenceState extends State<Attendence> {
         );
       },
     );
+  }
+
+//Post Date
+  Future postDate() async {
+    try {
+      Map<String, dynamic> response = await ApiService.postData(
+          "TransactionsPayroll/PostFixedDateLocationIdPayroll", {
+        "Location_Id": int.parse(Preference.getString(PrefKeys.locationId)),
+        "From_Date": DateFormat('yyyy/MM/dd').format(_startDate),
+        "To_Date": DateFormat('yyyy/MM/dd').format(_endDate)
+      });
+      if (response["result"] == true) {
+        Navigator.pop(context);
+        showCustomSnackbarSuccess(context, response["message"]);
+      } else {
+        showCustomSnackbar(context, response["message"]);
+      }
+    } catch (e) {
+      print("$e error");
+    }
+  }
+
+//Get Date
+  Future fatchDate() async {
+    var response = await ApiService.fetchData(
+        "TransactionsPayroll/GetFixedDateLocationIdPayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
+    _startDate = "${response[0]['from_Date']}".isEmpty
+        ? DateTime.now().add(Duration(days: 1))
+        : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['from_Date']);
+    _endDate = "${response[0]['to_Date']}".isEmpty
+        ? DateTime.now().add(Duration(days: 1))
+        : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['to_Date']);
   }
 
   void showShiftLog(
