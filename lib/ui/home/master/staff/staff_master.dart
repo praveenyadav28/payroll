@@ -622,7 +622,7 @@ class _StaffMasterScreenState extends State<StaffMasterScreen> {
                                               ),
                                             )),
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Expanded(
                                         child: dropdownTextfield(
                                             context,

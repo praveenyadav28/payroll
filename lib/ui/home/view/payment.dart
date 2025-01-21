@@ -101,7 +101,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
               createExcelPayment(_filteredPayments);
             },
           ),
-          SizedBox(width: 15)
+          const SizedBox(width: 15)
         ],
       ),
       drawer: const SideMenu(),
@@ -409,7 +409,8 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                                                 Sizes.height *
                                                                     .5,
                                                             child: Image.network(
-                                                                '${payment.imageUrls![0]}'),
+                                                                payment.imageUrls![
+                                                                    0]),
                                                           )
                                                   ],
                                                 ),
@@ -446,7 +447,8 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                               ),
                                               TextButton(
                                                 onPressed: () {
-                                                  deletePaymentApi(payment.pvNo)
+                                                  deletePaymentApi(
+                                                          payment.pvNo, context)
                                                       .then(
                                                     (value) =>
                                                         _fetchPaymentsAndStream(),
@@ -735,7 +737,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                                                             .5,
                                                                     child: Image
                                                                         .network(
-                                                                            '${payment.imageUrls![0]}'),
+                                                                            payment.imageUrls![0]),
                                                                   )
                                                           ],
                                                         ),
@@ -758,7 +760,8 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                               icon: Icon(Icons.delete,
                                                   color: AppColor.red),
                                               onPressed: () {
-                                                deletePaymentApi(payment.pvNo)
+                                                deletePaymentApi(
+                                                        payment.pvNo, context)
                                                     .then(
                                                   (value) =>
                                                       _fetchPaymentsAndStream(),
@@ -770,7 +773,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                       ),
                                     ],
                                   );
-                                }).toList(),
+                                }),
                                 TableRow(children: [
                                   tableCell(''),
                                   tableCell(''),
@@ -782,7 +785,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
                                         TableCellVerticalAlignment.middle,
                                     child: SizedBox(
                                       height: Sizes.height * 0.07,
-                                      child: Center(child: Text('')),
+                                      child: const Center(child: Text('')),
                                     ),
                                   ),
                                 ])
@@ -864,7 +867,7 @@ class _PaymentViewScreenState extends State<PaymentViewScreen> {
   }
 
   // Delete payment
-  Future<void> deletePaymentApi(int? paymentId) async {
+  Future<void> deletePaymentApi(int? paymentId, context) async {
     var response = await ApiService.postData(
         "TransactionsPayroll/DeletePaymentVoucherPayroll?prefix=online&refno=$paymentId&locationid=${Preference.getString(PrefKeys.locationId)}",
         {});

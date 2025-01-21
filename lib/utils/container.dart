@@ -10,16 +10,15 @@ class OutsideContainer extends StatelessWidget {
       this.width,
       this.borderRadius,
       this.boxBorder,
-      this.BoxShadow,
-      Key? key})
-      : super(key: key);
+      this.boxShadow,
+      super.key});
 
   final Widget? child;
   final double? height;
   final double? width;
   final BorderRadiusGeometry? borderRadius;
   final BoxBorder? boxBorder;
-  final BoxShadow;
+  final List<BoxShadow>? boxShadow;
   @override
   Widget build(
     BuildContext context,
@@ -32,7 +31,7 @@ class OutsideContainer extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
             border: boxBorder,
-            boxShadow: BoxShadow,
+            boxShadow: boxShadow,
             borderRadius: borderRadius,
             gradient: const LinearGradient(
               begin: Alignment.topCenter,

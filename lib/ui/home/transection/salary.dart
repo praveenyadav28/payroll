@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_null_comparison
+// ignore_for_file: unnecessary_null_comparison, deprecated_member_use
 
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -244,7 +244,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    postDate();
+                    postDate(context);
                   },
                   child: const Text("Save"),
                 ),
@@ -1076,7 +1076,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
   }
 
 //Post Date
-  Future postDate() async {
+  Future postDate(context) async {
     try {
       Map<String, dynamic> response = await ApiService.postData(
           "TransactionsPayroll/PostFixedDateLocationIdPayroll", {
@@ -1271,7 +1271,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w600),
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               ),
@@ -1292,7 +1292,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w600),
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               ),
@@ -1536,7 +1536,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ),
                                 ),
@@ -1559,7 +1559,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ),
                                 ),

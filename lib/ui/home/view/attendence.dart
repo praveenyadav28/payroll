@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_null_comparison
+// ignore_for_file: unnecessary_null_comparison, deprecated_member_use
 
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -242,7 +242,7 @@ class _AttendenceState extends State<Attendence> {
                 ),
                 TextButton(
                   onPressed: () {
-                    postDate();
+                    postDate(context);
                   },
                   child: const Text("Save"),
                 ),
@@ -1180,7 +1180,7 @@ class _AttendenceState extends State<Attendence> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w600),
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               ),
@@ -1201,7 +1201,7 @@ class _AttendenceState extends State<Attendence> {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w600),
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               ),
@@ -1347,7 +1347,7 @@ class _AttendenceState extends State<Attendence> {
   }
 
 //Post Date
-  Future postDate() async {
+  Future postDate(context) async {
     try {
       Map<String, dynamic> response = await ApiService.postData(
           "TransactionsPayroll/PostFixedDateLocationIdPayroll", {
@@ -1371,10 +1371,10 @@ class _AttendenceState extends State<Attendence> {
     var response = await ApiService.fetchData(
         "TransactionsPayroll/GetFixedDateLocationIdPayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
     _startDate = "${response[0]['from_Date']}".isEmpty
-        ? DateTime.now().add(Duration(days: 1))
+        ? DateTime.now().add(const Duration(days: 1))
         : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['from_Date']);
     _endDate = "${response[0]['to_Date']}".isEmpty
-        ? DateTime.now().add(Duration(days: 1))
+        ? DateTime.now().add(const Duration(days: 1))
         : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['to_Date']);
   }
 
@@ -1470,7 +1470,7 @@ class _AttendenceState extends State<Attendence> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ),
                                 ),
@@ -1493,7 +1493,7 @@ class _AttendenceState extends State<Attendence> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w600),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ),
                                 ),

@@ -32,7 +32,7 @@ class CustomButton extends StatelessWidget {
               BoxShadow(
                 color: AppColor.black.withOpacity(0.26),
                 blurRadius: 14,
-                offset: Offset(0, 7),
+                offset: const Offset(0, 7),
               )
             ]),
         child: Center(
@@ -96,7 +96,7 @@ InkWell addDefaultButton(BuildContext context, Function()? onTap) {
     child: Container(
         height: 52,
         width: 52,
-        margin: EdgeInsets.only(top: 2),
+        margin: const EdgeInsets.only(top: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(5),
           color: AppColor.white,
