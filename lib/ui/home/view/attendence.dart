@@ -174,8 +174,7 @@ class _AttendenceState extends State<Attendence> {
   void _handleKeyPress(RawKeyEvent event) {
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.keyD &&
-          event.isControlPressed &&
-          event.isAltPressed) {
+          event.isControlPressed) {
         _showDialog();
       }
     }
@@ -1372,10 +1371,10 @@ class _AttendenceState extends State<Attendence> {
         "TransactionsPayroll/GetFixedDateLocationIdPayroll?locationId=${Preference.getString(PrefKeys.locationId)}");
     _startDate = "${response[0]['from_Date']}".isEmpty
         ? DateTime.now().add(const Duration(days: 1))
-        : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['from_Date']);
+        : DateFormat("dd/MM/yyyy").parse(response[0]['from_Date']);
     _endDate = "${response[0]['to_Date']}".isEmpty
         ? DateTime.now().add(const Duration(days: 1))
-        : DateFormat("d/M/yyyy h:mm:ss a").parse(response[0]['to_Date']);
+        : DateFormat("dd/MM/yyyy").parse(response[0]['to_Date']);
   }
 
   void showShiftLog(
